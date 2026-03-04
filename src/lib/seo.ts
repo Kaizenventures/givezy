@@ -24,12 +24,26 @@ export function buildMetadata(overrides: Partial<Metadata> = {}): Metadata {
       locale: "en_IN",
       type: "website",
       url: SITE_URL,
+      images: [
+        {
+          url: `${SITE_URL}/og-image.png`,
+          width: 1200,
+          height: 630,
+          alt: "Givezy — Donate Books & Clothes in Hyderabad with Free Pickup",
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: title as string,
       description,
+      images: [`${SITE_URL}/og-image.png`],
     },
+    icons: {
+      icon: "/icon-192.png",
+      apple: "/apple-touch-icon.png",
+    },
+    manifest: "/manifest.json",
     robots: {
       index: true,
       follow: true,

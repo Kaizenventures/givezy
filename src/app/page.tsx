@@ -63,7 +63,7 @@ export default function HomePage() {
                 href={`/donate?category=${cat.slug}`}
                 className="border border-gray-200 rounded-xl p-6 hover:border-emerald-300 hover:shadow-md transition-all group"
               >
-                <span className="text-4xl">{cat.icon}</span>
+                <span className="text-4xl" aria-hidden="true">{cat.icon}</span>
                 <h3 className="mt-3 text-lg font-semibold text-gray-900 group-hover:text-emerald-600 transition-colors">
                   {cat.name}
                 </h3>
