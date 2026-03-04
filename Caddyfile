@@ -1,4 +1,4 @@
 givezy.in {
-    reverse_proxy localhost:3000
+    reverse_proxy app:3000
     encode gzip
 }

@@ -33,7 +33,7 @@ export default function Footer() {
               Currently operating in Hyderabad, Telangana, India.
             </p>
             <p className="text-gray-500 text-sm mt-2">
-              Contact: <a href="mailto:hello@givezy.in" className="text-emerald-600 hover:underline">hello@givezy.in</a>
+              Contact: <a href="mailto:kaizen.labsindia@gmail.com" className="text-emerald-600 hover:underline">kaizen.labsindia@gmail.com</a>
             </p>
           </div>
         </div>

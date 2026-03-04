@@ -1,27 +1,100 @@
-# Givezy — Deployment Guide
+# Givezy — Deployment & Operations Cheatsheet
 
-## Cheapest Setup: $4/mo DigitalOcean Droplet
+## Your Setup
+- **Droplet IP:** 157.245.102.139
+- **Domain:** givezy.in (Porkbun)
+- **Repo:** github.com/Kaizenventures/givezy
+- **Admin:** https://givezy.in/admin/login
+- **Cost:** ~$4.60/mo
 
-### 1. Create Droplet
-- Go to cloud.digitalocean.com
-- Create Droplet → Bangalore datacenter
-- Choose: **$4/mo** (512 MB RAM, 10 GB disk) — or $6/mo for 1 GB
-- Image: Ubuntu 22.04
-- Add your SSH key
+---
 
-### 2. Point Domain
-- Buy `givezy.in` from any registrar
-- Add an A record: `givezy.in → <droplet-ip>`
-- Add an A record: `www.givezy.in → <droplet-ip>`
+## Quick Reference (copy-paste commands)
 
-### 3. Setup Server
+### SSH into your server
 ```bash
-ssh root@<droplet-ip>
+ssh root@157.245.102.139
+```
+
+### View logs (live)
+```bash
+cd ~/givezy && docker compose logs -f app
+```
+
+### View last 50 log lines
+```bash
+cd ~/givezy && docker compose logs app --tail 50
+```
+
+### Manual deploy (if CI/CD isn't set up yet)
+```bash
+cd ~/givezy && git pull origin main && docker compose down && docker compose up -d --build
+```
+
+### Restart without rebuilding
+```bash
+cd ~/givezy && docker compose restart
+```
+
+### Backup database
+```bash
+docker cp givezy-app-1:/app/data/givezy.db ~/givezy-backup-$(date +%F).db
+```
+
+### Check disk space
+```bash
+df -h
+```
+
+### Check memory / swap
+```bash
+free -h
+```
+
+---
+
+## CI/CD (Auto-Deploy on Push)
+
+Once set up, every push to `main` auto-deploys. One-time setup:
+
+### 1. Generate an SSH key for GitHub Actions
+On your local machine (NOT the droplet):
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/givezy-deploy -N ""
+```
+
+### 2. Add the public key to your droplet
+```bash
+cat ~/.ssh/givezy-deploy.pub | ssh root@157.245.102.139 "cat >> ~/.ssh/authorized_keys"
+```
+
+### 3. Add secrets to GitHub
+Go to: github.com/Kaizenventures/givezy/settings/secrets/actions
+
+Add these two secrets:
+- **DROPLET_IP** → `157.245.102.139`
+- **SSH_PRIVATE_KEY** → paste the contents of `~/.ssh/givezy-deploy` (the private key, NOT .pub)
+
+That's it. Now every `git push origin main` auto-deploys.
+
+---
+
+## First-Time Server Setup (already done, for reference)
+
+```bash
+ssh root@157.245.102.139
 
 # Install Docker
 curl -fsSL https://get.docker.com | sh
 
-# Clone repo
+# Add swap (needed for 512MB droplet)
+fallocate -l 1G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+echo '/swapfile none swap sw 0 0' >> /etc/fstab
+
+# Clone and setup
 git clone https://github.com/Kaizenventures/givezy.git
 cd givezy
 
@@ -29,44 +102,52 @@ cd givezy
 cat > .env << 'EOF'
 NEXTAUTH_SECRET=<run: openssl rand -base64 32>
 NEXTAUTH_URL=https://givezy.in
-ADMIN_EMAIL=vipin@givezy.in
+ADMIN_EMAIL=kaizen.labsindia@gmail.com
 ADMIN_PASSWORD=<your-secure-password>
 DATABASE_URL=file:./data/givezy.db
 EOF
 
-# Start everything
+# Fix Caddyfile to use Docker networking
+cat > Caddyfile << 'EOF'
+givezy.in {
+    reverse_proxy app:3000
+    encode gzip
+}
+EOF
+
+# Build and launch
 docker compose up -d --build
-
-# Seed admin user (first time only)
-docker compose exec app npx tsx src/lib/seed.ts
 ```
 
-### 4. That's it!
-- Site: https://givezy.in
-- Admin: https://givezy.in/admin/login
-- Caddy auto-provisions SSL via Let's Encrypt
+---
 
-## Maintenance
+## Troubleshooting
 
+**502 Bad Gateway?**
+→ App container probably crashed. Check: `docker compose logs app --tail 30`
+
+**Build killed?**
+→ Out of memory. Make sure swap is on: `swapon --show`
+
+**DNS not working?**
+→ Check Porkbun DNS: A record `@` → 157.245.102.139, A record `www` → 157.245.102.139
+
+**SSL not working?**
+→ Caddy auto-provisions. Just wait a minute, or check: `docker compose logs caddy --tail 20`
+
+**Need to change admin password?**
+→ Edit `~/givezy/.env`, change ADMIN_PASSWORD, then:
 ```bash
-# View logs
-docker compose logs -f app
-
-# Update after code changes
-git pull && docker compose up -d --build
-
-# Export donations CSV
-# Via admin panel, or: curl -H "Cookie: ..." https://givezy.in/api/admin/export
-
-# Backup database
-docker compose exec app cp data/givezy.db /tmp/backup.db
-docker cp givezy-app-1:/tmp/backup.db ./backup-$(date +%F).db
+docker compose down && docker compose up -d --build
 ```
+
+---
 
 ## Cost Breakdown
 | Item | Cost |
 |------|------|
 | DigitalOcean droplet (Bangalore) | $4/mo |
-| givezy.in domain | ~$7/yr (~$0.60/mo) |
-| SSL (Let's Encrypt) | Free |
+| givezy.in domain (Porkbun) | ~$7/yr (~$0.60/mo) |
+| SSL (Let's Encrypt via Caddy) | Free |
+| CI/CD (GitHub Actions) | Free |
 | **Total** | **~$4.60/mo** |
