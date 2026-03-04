@@ -6,6 +6,7 @@ RUN npm ci
 
 COPY . .
 RUN mkdir -p data public/uploads
+ENV NODE_OPTIONS="--max-old-space-size=1024"
 RUN npm run build
 
 ENV NODE_ENV=production
