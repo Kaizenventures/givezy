@@ -2,12 +2,15 @@
 
 import { useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { BookOpen, Shirt, Camera, X, Check, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import AddressInput from "@/components/AddressInput";
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3;
 
 const CATEGORIES = [
-  { value: "books", label: "Books", icon: "📚" },
-  { value: "clothes", label: "Clothes", icon: "👕" },
+  { value: "books", label: "Books", icon: BookOpen, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-400" },
+  { value: "clothes", label: "Clothes", icon: Shirt, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-400" },
 ];
 
 const CONDITIONS = [
@@ -17,9 +20,9 @@ const CONDITIONS = [
 ];
 
 const TIME_SLOTS = [
-  { value: "morning", label: "Morning (9 AM – 12 PM)" },
-  { value: "afternoon", label: "Afternoon (12 PM – 4 PM)" },
-  { value: "evening", label: "Evening (4 PM – 7 PM)" },
+  { value: "morning", label: "Morning (9–12)" },
+  { value: "afternoon", label: "Afternoon (12–4)" },
+  { value: "evening", label: "Evening (4–7)" },
 ];
 
 const HYDERABAD_AREAS = [
@@ -29,19 +32,27 @@ const HYDERABAD_AREAS = [
   "Uppal", "Other",
 ];
 
+const STEP_LABELS = ["Items", "Details", "Review"];
+
+const stepVariants = {
+  enter: (direction: number) => ({ x: direction > 0 ? 60 : -60, opacity: 0 }),
+  center: { x: 0, opacity: 1, transition: { duration: 0.3, ease: "easeOut" as const } },
+  exit: (direction: number) => ({ x: direction > 0 ? -60 : 60, opacity: 0, transition: { duration: 0.2 } }),
+};
+
 export default function DonationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState<Step>(1);
+  const [direction, setDirection] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Step 1
+  // Step 1: Category + Item details
   const [category, setCategory] = useState(searchParams.get("category") || "");
-
-  // Step 2
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [condition, setCondition] = useState("");
@@ -49,7 +60,7 @@ export default function DonationForm() {
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
 
-  // Step 3
+  // Step 2: Contact info
   const [donorName, setDonorName] = useState("");
   const [donorPhone, setDonorPhone] = useState("");
   const [donorEmail, setDonorEmail] = useState("");
@@ -72,12 +83,47 @@ export default function DonationForm() {
     }
   }
 
+  function validateField(name: string, value: string) {
+    const errors = { ...fieldErrors };
+    if (name === "donorPhone" && value && !/^\+?[\d\s-]{10,}$/.test(value)) {
+      errors.donorPhone = "Enter a valid 10-digit phone number";
+    } else if (name === "donorEmail" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      errors.donorEmail = "Enter a valid email address";
+    } else if (name === "donorPincode" && value && value.length !== 6) {
+      errors.donorPincode = "Pincode must be 6 digits";
+    } else {
+      delete errors[name];
+    }
+    setFieldErrors(errors);
+  }
+
+  function formatPhone(val: string) {
+    let digits = val.replace(/\D/g, "");
+    if (digits.startsWith("91") && digits.length > 10) digits = digits.slice(2);
+    if (digits.length > 10) digits = digits.slice(0, 10);
+    setDonorPhone(digits ? `+91 ${digits}` : "");
+  }
+
   function canProceed(): boolean {
+    const noFieldErrors = Object.keys(fieldErrors).length === 0;
     switch (step) {
-      case 1: return !!category;
-      case 2: return !!title && !!condition;
-      case 3: return !!donorName && !!donorPhone && !!donorAddress && !!donorPincode;
+      case 1: return !!category && !!title && !!condition && noFieldErrors;
+      case 2: return !!donorName && !!donorPhone && !!donorAddress && donorPincode.length === 6 && noFieldErrors;
       default: return true;
+    }
+  }
+
+  function goTo(s: Step) {
+    setDirection(s > step ? 1 : -1);
+    setStep(s);
+  }
+
+  function handleAddressSelect(address: string, pincode?: string, area?: string) {
+    setDonorAddress(address);
+    if (pincode) setDonorPincode(pincode);
+    if (area) {
+      const match = HYDERABAD_AREAS.find((a) => area.toLowerCase().includes(a.toLowerCase()));
+      if (match) setDonorArea(match);
     }
   }
 
@@ -124,323 +170,370 @@ export default function DonationForm() {
 
   return (
     <div className="max-w-xl mx-auto">
-      {/* Progress bar */}
-      <div className="flex items-center gap-2 mb-8">
-        {[1, 2, 3, 4].map((s) => (
-          <div
-            key={s}
-            className={`h-1.5 flex-1 rounded-full transition-colors ${
-              s <= step ? "bg-emerald-500" : "bg-gray-200"
-            }`}
-          />
+      {/* Progress bar with labels */}
+      <div className="flex items-center gap-1 mb-8">
+        {STEP_LABELS.map((label, i) => (
+          <div key={label} className="flex-1">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                  i + 1 < step
+                    ? "bg-emerald-600 text-white"
+                    : i + 1 === step
+                    ? "bg-emerald-600 text-white"
+                    : "bg-gray-200 text-gray-500"
+                }`}
+              >
+                {i + 1 < step ? <Check className="w-3.5 h-3.5" /> : i + 1}
+              </div>
+              <span className={`text-xs font-medium ${i + 1 <= step ? "text-emerald-700" : "text-gray-400"}`}>
+                {label}
+              </span>
+            </div>
+            <div
+              className={`h-1 rounded-full transition-all ${
+                i + 1 <= step ? "bg-emerald-500" : "bg-gray-200"
+              }`}
+            />
+          </div>
         ))}
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">
           {error}
         </div>
       )}
 
-      {/* Step 1: Category */}
-      {step === 1 && (
-        <div>
-          <h2 className="text-xl font-semibold mb-1">What are you donating?</h2>
-          <p className="text-gray-500 text-sm mb-6">Pick a category to get started.</p>
-          <div className="grid grid-cols-2 gap-4">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.value}
-                onClick={() => setCategory(cat.value)}
-                className={`p-6 rounded-xl border-2 text-left transition-all ${
-                  category === cat.value
-                    ? "border-emerald-500 bg-emerald-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <span className="text-3xl">{cat.icon}</span>
-                <p className="mt-2 font-semibold text-gray-900">{cat.label}</p>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <AnimatePresence mode="wait" custom={direction}>
+        {/* Step 1: Category + Item Details */}
+        {step === 1 && (
+          <motion.div
+            key="step1"
+            custom={direction}
+            variants={stepVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+          >
+            <h2 className="text-xl font-bold text-gray-900 mb-1">What are you donating?</h2>
+            <p className="text-gray-500 text-sm mb-6">Pick a category and tell us about the items.</p>
 
-      {/* Step 2: Item details */}
-      {step === 2 && (
-        <div>
-          <h2 className="text-xl font-semibold mb-1">Item details</h2>
-          <p className="text-gray-500 text-sm mb-6">Tell us about what you&apos;re donating.</p>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Title <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Stack of 10 engineering textbooks"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Any additional details about the items..."
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Condition <span className="text-red-500">*</span>
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {CONDITIONS.map((c) => (
-                  <button
-                    key={c.value}
-                    onClick={() => setCondition(c.value)}
-                    className={`py-2 px-3 rounded-lg border text-sm font-medium transition-all ${
-                      condition === c.value
-                        ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                        : "border-gray-200 text-gray-600 hover:border-gray-300"
-                    }`}
-                  >
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-              <input
-                type="number"
-                min={1}
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-              />
-              {imagePreview ? (
-                <div className="relative">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
-                  <button
-                    onClick={() => {
-                      setImage(null);
-                      setImagePreview("");
-                      if (fileInputRef.current) fileInputRef.current.value = "";
-                    }}
-                    className="absolute top-2 right-2 bg-white/80 rounded-full w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-white"
-                  >
-                    &times;
-                  </button>
-                </div>
-              ) : (
+            {/* Category */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              {CATEGORIES.map((cat) => (
                 <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-8 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 text-sm hover:border-emerald-400 hover:text-emerald-600 transition-colors"
+                  key={cat.value}
+                  onClick={() => setCategory(cat.value)}
+                  className={`p-5 rounded-xl border-2 text-left transition-all ${
+                    category === cat.value
+                      ? `${cat.border} ${cat.bg}`
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
                 >
-                  Click to upload a photo (optional, max 5 MB)
+                  <cat.icon className={`w-7 h-7 ${cat.color}`} />
+                  <p className="mt-2 font-semibold text-gray-900">{cat.label}</p>
                 </button>
-              )}
+              ))}
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Step 3: Contact info */}
-      {step === 3 && (
-        <div>
-          <h2 className="text-xl font-semibold mb-1">Your details</h2>
-          <p className="text-gray-500 text-sm mb-6">
-            We need this to coordinate the pickup. Your info stays private.
-          </p>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={donorName}
-                onChange={(e) => setDonorName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone Number <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="tel"
-                value={donorPhone}
-                onChange={(e) => setDonorPhone(e.target.value)}
-                placeholder="+91 9876543210"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input
-                type="email"
-                value={donorEmail}
-                onChange={(e) => setDonorEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Pickup Address <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={donorAddress}
-                onChange={(e) => setDonorAddress(e.target.value)}
-                placeholder="Full address with landmark"
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+            {/* Item fields */}
+            <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Pincode <span className="text-red-500">*</span>
+                  Title <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
-                  value={donorPincode}
-                  onChange={(e) => setDonorPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  maxLength={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Stack of 10 engineering textbooks"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Area</label>
-                <select
-                  value={donorArea}
-                  onChange={(e) => setDonorArea(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white"
-                >
-                  <option value="">Select area</option>
-                  {HYDERABAD_AREAS.map((area) => (
-                    <option key={area} value={area}>
-                      {area}
-                    </option>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Any additional details..."
+                  rows={2}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Condition <span className="text-red-400">*</span>
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {CONDITIONS.map((c) => (
+                    <button
+                      key={c.value}
+                      onClick={() => setCondition(c.value)}
+                      className={`py-2.5 px-3 rounded-xl border text-sm font-medium transition-all ${
+                        condition === c.value
+                          ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                      }`}
+                    >
+                      {c.label}
+                    </button>
                   ))}
-                </select>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="w-24">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Qty</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                  {imagePreview ? (
+                    <div className="relative h-[42px] flex items-center gap-2">
+                      <img src={imagePreview} alt="Preview" className="w-10 h-10 object-cover rounded-lg" />
+                      <span className="text-sm text-gray-600 truncate flex-1">{image?.name}</span>
+                      <button
+                        onClick={() => { setImage(null); setImagePreview(""); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                        className="p-1 text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-sm hover:border-emerald-400 hover:text-emerald-600 transition-colors inline-flex items-center justify-center gap-2"
+                    >
+                      <Camera className="w-4 h-4" />
+                      Add photo (optional)
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Preferred Pickup Time
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {TIME_SLOTS.map((slot) => (
-                  <button
-                    key={slot.value}
-                    onClick={() => setPreferredSlot(slot.value)}
-                    className={`py-2 px-3 rounded-lg border text-xs font-medium transition-all ${
-                      preferredSlot === slot.value
-                        ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                        : "border-gray-200 text-gray-600 hover:border-gray-300"
+          </motion.div>
+        )}
+
+        {/* Step 2: Contact Info */}
+        {step === 2 && (
+          <motion.div
+            key="step2"
+            custom={direction}
+            variants={stepVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+          >
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Your details</h2>
+            <p className="text-gray-500 text-sm mb-6">For coordinating the pickup. Your info stays private.</p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={donorName}
+                  onChange={(e) => setDonorName(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={donorPhone}
+                  onChange={(e) => formatPhone(e.target.value)}
+                  onBlur={() => validateField("donorPhone", donorPhone)}
+                  placeholder="+91 9876543210"
+                  className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-colors ${
+                    fieldErrors.donorPhone ? "border-red-300 focus:border-red-500 focus:ring-red-200" : "border-gray-300 focus:border-emerald-500"
+                  }`}
+                />
+                {fieldErrors.donorPhone && <p className="text-xs text-red-500 mt-1">{fieldErrors.donorPhone}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={donorEmail}
+                  onChange={(e) => setDonorEmail(e.target.value)}
+                  onBlur={() => validateField("donorEmail", donorEmail)}
+                  className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-colors ${
+                    fieldErrors.donorEmail ? "border-red-300 focus:border-red-500 focus:ring-red-200" : "border-gray-300 focus:border-emerald-500"
+                  }`}
+                />
+                {fieldErrors.donorEmail && <p className="text-xs text-red-500 mt-1">{fieldErrors.donorEmail}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Pickup Address <span className="text-red-400">*</span>
+                </label>
+                <AddressInput
+                  value={donorAddress}
+                  onChange={setDonorAddress}
+                  onSelect={handleAddressSelect}
+                  placeholder="Start typing your address..."
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Pincode <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={donorPincode}
+                    onChange={(e) => setDonorPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    onBlur={() => validateField("donorPincode", donorPincode)}
+                    maxLength={6}
+                    className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-colors ${
+                      fieldErrors.donorPincode ? "border-red-300 focus:border-red-500 focus:ring-red-200" : "border-gray-300 focus:border-emerald-500"
                     }`}
+                  />
+                  {fieldErrors.donorPincode && <p className="text-xs text-red-500 mt-1">{fieldErrors.donorPincode}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Area</label>
+                  <select
+                    value={donorArea}
+                    onChange={(e) => setDonorArea(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white transition-colors"
                   >
-                    {slot.label}
-                  </button>
-                ))}
+                    <option value="">Select area</option>
+                    {HYDERABAD_AREAS.map((area) => (
+                      <option key={area} value={area}>{area}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Pickup Time</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {TIME_SLOTS.map((slot) => (
+                    <button
+                      key={slot.value}
+                      onClick={() => setPreferredSlot(slot.value)}
+                      className={`py-2.5 px-3 rounded-xl border text-xs font-medium transition-all ${
+                        preferredSlot === slot.value
+                          ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                      }`}
+                    >
+                      {slot.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={whatsappOptin}
+                  onChange={(e) => setWhatsappOptin(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                <span className="text-sm text-gray-600">Send me pickup updates on WhatsApp</span>
+              </label>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Step 3: Review */}
+        {step === 3 && (
+          <motion.div
+            key="step3"
+            custom={direction}
+            variants={stepVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+          >
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Review your donation</h2>
+            <p className="text-gray-500 text-sm mb-6">Make sure everything looks good before submitting.</p>
+
+            <div className="space-y-4">
+              <div className="bg-gray-50 rounded-xl p-5 space-y-2 text-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-bold text-gray-900">Item Details</h3>
+                  <button onClick={() => goTo(1)} className="text-emerald-600 text-xs font-medium hover:underline">Edit</button>
+                </div>
+                <p><span className="text-gray-400">Category:</span> <span className="text-gray-900 capitalize">{category}</span></p>
+                <p><span className="text-gray-400">Title:</span> <span className="text-gray-900">{title}</span></p>
+                {description && <p><span className="text-gray-400">Description:</span> <span className="text-gray-900">{description}</span></p>}
+                <p><span className="text-gray-400">Condition:</span> <span className="text-gray-900">{condition.replace("_", " ")}</span></p>
+                <p><span className="text-gray-400">Quantity:</span> <span className="text-gray-900">{quantity}</span></p>
+                {imagePreview && <img src={imagePreview} alt="Donation" className="w-24 h-24 object-cover rounded-lg mt-2" />}
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-5 space-y-2 text-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-bold text-gray-900">Pickup Details</h3>
+                  <button onClick={() => goTo(2)} className="text-emerald-600 text-xs font-medium hover:underline">Edit</button>
+                </div>
+                <p><span className="text-gray-400">Name:</span> <span className="text-gray-900">{donorName}</span></p>
+                <p><span className="text-gray-400">Phone:</span> <span className="text-gray-900">{donorPhone}</span></p>
+                {donorEmail && <p><span className="text-gray-400">Email:</span> <span className="text-gray-900">{donorEmail}</span></p>}
+                <p><span className="text-gray-400">Address:</span> <span className="text-gray-900">{donorAddress}</span></p>
+                <p><span className="text-gray-400">Pincode:</span> <span className="text-gray-900">{donorPincode}</span></p>
+                {donorArea && <p><span className="text-gray-400">Area:</span> <span className="text-gray-900">{donorArea}</span></p>}
+                {preferredSlot && <p><span className="text-gray-400">Preferred time:</span> <span className="text-gray-900 capitalize">{preferredSlot}</span></p>}
+                <p><span className="text-gray-400">WhatsApp updates:</span> <span className="text-gray-900">{whatsappOptin ? "Yes" : "No"}</span></p>
               </div>
             </div>
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={whatsappOptin}
-                onChange={(e) => setWhatsappOptin(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-              />
-              <span className="text-sm text-gray-600">
-                Send me pickup updates on WhatsApp
-              </span>
-            </label>
-          </div>
-        </div>
-      )}
-
-      {/* Step 4: Review */}
-      {step === 4 && (
-        <div>
-          <h2 className="text-xl font-semibold mb-1">Review your donation</h2>
-          <p className="text-gray-500 text-sm mb-6">Make sure everything looks good.</p>
-
-          <div className="space-y-4">
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
-              <h3 className="font-semibold text-gray-900">Item</h3>
-              <p><span className="text-gray-500">Category:</span> {category}</p>
-              <p><span className="text-gray-500">Title:</span> {title}</p>
-              {description && <p><span className="text-gray-500">Description:</span> {description}</p>}
-              <p><span className="text-gray-500">Condition:</span> {condition.replace("_", " ")}</p>
-              <p><span className="text-gray-500">Quantity:</span> {quantity}</p>
-              {imagePreview && (
-                <img src={imagePreview} alt="Donation" className="w-32 h-32 object-cover rounded-lg mt-2" />
-              )}
-            </div>
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
-              <h3 className="font-semibold text-gray-900">Pickup Details</h3>
-              <p><span className="text-gray-500">Name:</span> {donorName}</p>
-              <p><span className="text-gray-500">Phone:</span> {donorPhone}</p>
-              {donorEmail && <p><span className="text-gray-500">Email:</span> {donorEmail}</p>}
-              <p><span className="text-gray-500">Address:</span> {donorAddress}</p>
-              <p><span className="text-gray-500">Pincode:</span> {donorPincode}</p>
-              {donorArea && <p><span className="text-gray-500">Area:</span> {donorArea}</p>}
-              {preferredSlot && <p><span className="text-gray-500">Preferred time:</span> {preferredSlot}</p>}
-              <p><span className="text-gray-500">WhatsApp updates:</span> {whatsappOptin ? "Yes" : "No"}</p>
-            </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Navigation */}
       <div className="flex justify-between mt-8">
         {step > 1 ? (
           <button
-            onClick={() => setStep((s) => (s - 1) as Step)}
-            className="px-5 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            onClick={() => goTo((step - 1) as Step)}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
           >
+            <ArrowLeft className="w-4 h-4" />
             Back
           </button>
         ) : (
           <div />
         )}
 
-        {step < 4 ? (
+        {step < 3 ? (
           <button
-            onClick={() => setStep((s) => (s + 1) as Step)}
+            onClick={() => goTo((step + 1) as Step)}
             disabled={!canProceed()}
-            className="px-6 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-6 py-2.5 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:shadow-emerald-200"
           >
             Continue
+            <ArrowRight className="w-4 h-4" />
           </button>
         ) : (
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="px-6 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 hover:shadow-md hover:shadow-emerald-200"
           >
-            {submitting ? "Submitting..." : "Submit Donation"}
+            {submitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              <>
+                Submit Donation
+                <Check className="w-4 h-4" />
+              </>
+            )}
           </button>
         )}
       </div>
