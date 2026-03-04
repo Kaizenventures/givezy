@@ -107,7 +107,14 @@ export default function DonationForm() {
         const data = await res.json();
         throw new Error(data.error || "Something went wrong");
       }
-      router.push("/donate/success");
+      const data = await res.json();
+      const params = new URLSearchParams({
+        id: data.id,
+        address: donorAddress,
+        name: donorName,
+        phone: donorPhone,
+      });
+      router.push(`/donate/success?${params.toString()}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
