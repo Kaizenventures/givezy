@@ -1,6 +1,9 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        - NEXT_PUBLIC_RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -13,6 +16,22 @@ services:
       - NEXTAUTH_URL=https://givezy.in
       - ADMIN_EMAIL=${ADMIN_EMAIL}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      # Razorpay
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - NEXT_PUBLIC_RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      # Shiprocket
+      - SHIPROCKET_EMAIL=${SHIPROCKET_EMAIL}
+      - SHIPROCKET_PASSWORD=${SHIPROCKET_PASSWORD}
+      # Pickup/warehouse address
+      - PICKUP_LOCATION_NAME=${PICKUP_LOCATION_NAME:-Givezy Warehouse}
+      - PICKUP_ADDRESS=${PICKUP_ADDRESS}
+      - PICKUP_CITY=${PICKUP_CITY:-Hyderabad}
+      - PICKUP_STATE=${PICKUP_STATE:-Telangana}
+      - PICKUP_PINCODE=${PICKUP_PINCODE:-500001}
+      - PICKUP_PHONE=${PICKUP_PHONE}
+      # Service charge
+      - NEXT_PUBLIC_SERVICE_CHARGE_PERCENT=5
 
   caddy:
     image: caddy:2-alpine
