@@ -31,6 +31,35 @@ export const admins = sqliteTable("admins", {
   passwordHash: text("password_hash").notNull(),
 });
 
+// Shipments table - tracks shipping + payment for each donation
+export const shipments = sqliteTable("shipments", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  donationId: text("donation_id").notNull(), // links to donations.id
+
+  // Pricing (all in paise: 100 paise = ₹1)
+  shippingCost: integer("shipping_cost").notNull(), // base shipping from Shiprocket estimate
+  serviceFee: integer("service_fee").notNull(), // 5% of shipping cost — your cut
+  totalAmount: integer("total_amount").notNull(), // shippingCost + serviceFee
+
+  // Razorpay payment
+  paymentStatus: text("payment_status").notNull().default("pending"), // pending | paid | failed | refunded
+  razorpayOrderId: text("razorpay_order_id"),
+  razorpayPaymentId: text("razorpay_payment_id"),
+  razorpaySignature: text("razorpay_signature"),
+
+  // Shiprocket fulfillment
+  shiprocketOrderId: text("shiprocket_order_id"),
+  shiprocketShipmentId: text("shiprocket_shipment_id"),
+  shiprocketAwb: text("shiprocket_awb"), // airway bill number
+  trackingUrl: text("tracking_url"),
+  fulfillmentStatus: text("fulfillment_status").notNull().default("pending"), // pending | processing | shipped | delivered | cancelled
+
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
 export type Donation = typeof donations.$inferSelect;
 export type NewDonation = typeof donations.$inferInsert;
 export type Admin = typeof admins.$inferSelect;
+export type Shipment = typeof shipments.$inferSelect;
+export type NewShipment = typeof shipments.$inferInsert;

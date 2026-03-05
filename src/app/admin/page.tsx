@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { donations } from "@/lib/schema";
+import { donations, shipments } from "@/lib/schema";
 import { eq, desc, sql } from "drizzle-orm";
 import Link from "next/link";
 import { AdminShell } from "./layout";
@@ -12,12 +12,19 @@ export default async function AdminDashboard() {
   if (!session) redirect("/admin/login");
 
   const allDonations = await db.select().from(donations).orderBy(desc(donations.createdAt));
+  const allShipments = await db.select().from(shipments);
 
   const total = allDonations.length;
   const pending = allDonations.filter((d) => d.status === "pending").length;
   const contacted = allDonations.filter((d) => d.status === "contacted").length;
   const scheduled = allDonations.filter((d) => d.status === "scheduled").length;
   const pickedUp = allDonations.filter((d) => d.status === "picked_up").length;
+
+  // Shipping stats
+  const paidShipments = allShipments.filter((s) => s.paymentStatus === "paid").length;
+  const totalRevenue = allShipments
+    .filter((s) => s.paymentStatus === "paid")
+    .reduce((sum, s) => sum + s.serviceFee, 0);
 
   const recent = allDonations.slice(0, 5);
 
@@ -26,13 +33,15 @@ export default async function AdminDashboard() {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
           { label: "Total", value: total, color: "bg-gray-100 text-gray-900" },
           { label: "Pending", value: pending, color: "bg-yellow-50 text-yellow-700" },
           { label: "Contacted", value: contacted, color: "bg-blue-50 text-blue-700" },
           { label: "Scheduled", value: scheduled, color: "bg-purple-50 text-purple-700" },
           { label: "Picked Up", value: pickedUp, color: "bg-emerald-50 text-emerald-700" },
+          { label: "Paid Shipments", value: paidShipments, color: "bg-indigo-50 text-indigo-700" },
+          { label: "Revenue", value: `₹${(totalRevenue / 100).toFixed(0)}`, color: "bg-pink-50 text-pink-700" },
         ].map((stat) => (
           <div key={stat.label} className={`rounded-lg p-4 ${stat.color}`}>
             <p className="text-2xl font-bold">{stat.value}</p>

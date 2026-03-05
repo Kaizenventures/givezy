@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { donations } from "@/lib/schema";
+import { donations, shipments } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { AdminShell } from "../../layout";
@@ -24,6 +24,14 @@ export default async function DonationDetailPage({
     .limit(1);
 
   if (!donation) notFound();
+
+  // Fetch associated shipment (if donor paid for shipping)
+  const donationShipments = await db
+    .select()
+    .from(shipments)
+    .where(eq(shipments.donationId, id));
+
+  const shipment = donationShipments.length > 0 ? donationShipments[0] : null;
 
   return (
     <AdminShell>
@@ -68,6 +76,95 @@ export default async function DonationDetailPage({
             currentPickupDate={donation.pickupDate}
             currentPickupNotes={donation.pickupNotes}
           />
+
+          {/* Shipment info */}
+          {shipment && (
+            <div className="border border-gray-200 rounded-lg p-5">
+              <h3 className="font-semibold text-gray-900 mb-3">Shipping & Payment</h3>
+
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Payment</p>
+                  <span className={`inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded-full ${
+                    shipment.paymentStatus === "paid"
+                      ? "bg-green-100 text-green-700"
+                      : shipment.paymentStatus === "failed"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-yellow-100 text-yellow-700"
+                  }`}>
+                    {shipment.paymentStatus.toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Fulfillment</p>
+                  <span className={`inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded-full ${
+                    shipment.fulfillmentStatus === "delivered"
+                      ? "bg-green-100 text-green-700"
+                      : shipment.fulfillmentStatus === "shipped"
+                      ? "bg-blue-100 text-blue-700"
+                      : shipment.fulfillmentStatus === "cancelled"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-yellow-100 text-yellow-700"
+                  }`}>
+                    {shipment.fulfillmentStatus.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+
+              {/* Pricing breakdown */}
+              <div className="bg-gray-50 rounded p-3 mb-4 space-y-1 text-sm">
+                <div className="flex justify-between text-gray-600">
+                  <span>Shipping Cost</span>
+                  <span>₹{(shipment.shippingCost / 100).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>Service Charge (5%)</span>
+                  <span>₹{(shipment.serviceFee / 100).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between font-semibold text-gray-900 border-t pt-1">
+                  <span>Total Paid</span>
+                  <span>₹{(shipment.totalAmount / 100).toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Tracking details */}
+              <dl className="space-y-2 text-sm">
+                {shipment.razorpayPaymentId && (
+                  <div>
+                    <dt className="text-gray-500">Razorpay Payment ID</dt>
+                    <dd className="font-mono text-xs text-gray-700">{shipment.razorpayPaymentId}</dd>
+                  </div>
+                )}
+                {shipment.shiprocketOrderId && (
+                  <div>
+                    <dt className="text-gray-500">Shiprocket Order ID</dt>
+                    <dd className="font-mono text-xs text-gray-700">{shipment.shiprocketOrderId}</dd>
+                  </div>
+                )}
+                {shipment.shiprocketAwb && (
+                  <div>
+                    <dt className="text-gray-500">AWB Number</dt>
+                    <dd className="font-mono text-xs text-gray-700">{shipment.shiprocketAwb}</dd>
+                  </div>
+                )}
+                {shipment.trackingUrl && (
+                  <div>
+                    <dt className="text-gray-500">Tracking</dt>
+                    <dd>
+                      <a
+                        href={shipment.trackingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline text-xs"
+                      >
+                        Track Shipment →
+                      </a>
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+          )}
         </div>
 
         {/* Donor sidebar */}

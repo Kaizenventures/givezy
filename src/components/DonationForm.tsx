@@ -159,6 +159,7 @@ export default function DonationForm() {
         address: donorAddress,
         name: donorName,
         phone: donorPhone,
+        pincode: donorPincode,
       });
       router.push(`/donate/success?${params.toString()}`);
     } catch (err) {
