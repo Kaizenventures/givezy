@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
     const description = formData.get("description") as string;
     const condition = formData.get("condition") as string;
     const quantity = parseInt(formData.get("quantity") as string) || 1;
+    const weightRange = (formData.get("weightRange") as string) || "1-3kg";
     const donorName = formData.get("donorName") as string;
     const donorPhone = formData.get("donorPhone") as string;
     const donorEmail = formData.get("donorEmail") as string;
@@ -52,6 +53,7 @@ export async function POST(req: NextRequest) {
         description: description || null,
         condition,
         quantity,
+        weightRange,
         imageUrl,
         donorName,
         donorPhone,

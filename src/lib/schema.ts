@@ -6,7 +6,8 @@ export const donations = sqliteTable("donations", {
   title: text("title").notNull(),
   description: text("description"),
   condition: text("condition").notNull(), // "new" | "gently_used" | "used"
-  quantity: integer("quantity").notNull().default(1),
+  quantity: integer("quantity").notNull().default(1), // kept for backward compat
+  weightRange: text("weight_range").notNull().default("1-3kg"), // "under-1kg" | "1-3kg" | "3-5kg" | "5-10kg" | "above-10kg"
   imageUrl: text("image_url"),
   status: text("status").notNull().default("pending"), // pending | contacted | scheduled | picked_up | cancelled
   pickupDate: text("pickup_date"),

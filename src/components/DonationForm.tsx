@@ -3,8 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Shirt, Camera, X, Check, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
-import AddressInput from "@/components/AddressInput";
+import { BookOpen, Shirt, Camera, X, Check, ArrowLeft, ArrowRight, Loader2, Package } from "lucide-react";
 
 type Step = 1 | 2 | 3;
 
@@ -19,17 +18,18 @@ const CONDITIONS = [
   { value: "used", label: "Used but Functional" },
 ];
 
+const WEIGHT_RANGES = [
+  { value: "under-1kg", label: "Under 1 kg", hint: "A few books or light clothes", grams: 750 },
+  { value: "1-3kg", label: "1–3 kg", hint: "A small bag of items", grams: 2000 },
+  { value: "3-5kg", label: "3–5 kg", hint: "A medium box", grams: 4000 },
+  { value: "5-10kg", label: "5–10 kg", hint: "A large box or suitcase", grams: 7500 },
+  { value: "above-10kg", label: "Above 10 kg", hint: "Multiple boxes", grams: 12000 },
+];
+
 const TIME_SLOTS = [
   { value: "morning", label: "Morning (9–12)" },
   { value: "afternoon", label: "Afternoon (12–4)" },
   { value: "evening", label: "Evening (4–7)" },
-];
-
-const HYDERABAD_AREAS = [
-  "Ameerpet", "Banjara Hills", "Begumpet", "Gachibowli", "HITEC City",
-  "Jubilee Hills", "Kondapur", "Kukatpally", "LB Nagar", "Madhapur",
-  "Manikonda", "Miyapur", "Secunderabad", "Shamshabad", "Toli Chowki",
-  "Uppal", "Other",
 ];
 
 const STEP_LABELS = ["Items", "Details", "Review"];
@@ -56,7 +56,7 @@ export default function DonationForm() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [condition, setCondition] = useState("");
-  const [quantity, setQuantity] = useState(1);
+  const [weightRange, setWeightRange] = useState("1-3kg");
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
 
@@ -66,7 +66,7 @@ export default function DonationForm() {
   const [donorEmail, setDonorEmail] = useState("");
   const [donorAddress, setDonorAddress] = useState("");
   const [donorPincode, setDonorPincode] = useState("");
-  const [donorArea, setDonorArea] = useState("");
+  const [donorCity, setDonorCity] = useState("");
   const [whatsappOptin, setWhatsappOptin] = useState(true);
   const [preferredSlot, setPreferredSlot] = useState("");
 
@@ -118,13 +118,9 @@ export default function DonationForm() {
     setStep(s);
   }
 
-  function handleAddressSelect(address: string, pincode?: string, area?: string) {
-    setDonorAddress(address);
-    if (pincode) setDonorPincode(pincode);
-    if (area) {
-      const match = HYDERABAD_AREAS.find((a) => area.toLowerCase().includes(a.toLowerCase()));
-      if (match) setDonorArea(match);
-    }
+  // Get weight in grams for the selected range
+  function getWeightGrams(): number {
+    return WEIGHT_RANGES.find((w) => w.value === weightRange)?.grams || 2000;
   }
 
   async function handleSubmit() {
@@ -136,13 +132,14 @@ export default function DonationForm() {
     formData.append("title", title);
     formData.append("description", description);
     formData.append("condition", condition);
-    formData.append("quantity", String(quantity));
+    formData.append("quantity", "1");
+    formData.append("weightRange", weightRange);
     formData.append("donorName", donorName);
     formData.append("donorPhone", donorPhone);
     formData.append("donorEmail", donorEmail);
     formData.append("donorAddress", donorAddress);
     formData.append("donorPincode", donorPincode);
-    formData.append("donorArea", donorArea);
+    formData.append("donorArea", donorCity);
     formData.append("whatsappOptin", String(whatsappOptin));
     formData.append("preferredSlot", preferredSlot);
     if (image) formData.append("image", image);
@@ -160,6 +157,7 @@ export default function DonationForm() {
         name: donorName,
         phone: donorPhone,
         pincode: donorPincode,
+        weight: String(getWeightGrams()),
       });
       router.push(`/donate/success?${params.toString()}`);
     } catch (err) {
@@ -282,41 +280,60 @@ export default function DonationForm() {
                   ))}
                 </div>
               </div>
-              <div className="flex gap-4">
-                <div className="w-24">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Qty</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
-                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                  {imagePreview ? (
-                    <div className="relative h-[42px] flex items-center gap-2">
-                      <img src={imagePreview} alt="Preview" className="w-10 h-10 object-cover rounded-lg" />
-                      <span className="text-sm text-gray-600 truncate flex-1">{image?.name}</span>
-                      <button
-                        onClick={() => { setImage(null); setImagePreview(""); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-                        className="p-1 text-gray-400 hover:text-gray-600"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
+
+              {/* Weight selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <Package className="w-3.5 h-3.5 inline mr-1" />
+                  Approximate Weight <span className="text-red-400">*</span>
+                </label>
+                <p className="text-xs text-gray-400 mb-2">This helps us calculate shipping costs accurately.</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {WEIGHT_RANGES.map((w) => (
                     <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-sm hover:border-emerald-400 hover:text-emerald-600 transition-colors inline-flex items-center justify-center gap-2"
+                      key={w.value}
+                      onClick={() => setWeightRange(w.value)}
+                      className={`py-2.5 px-3 rounded-xl border text-left transition-all ${
+                        weightRange === w.value
+                          ? "border-emerald-500 bg-emerald-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
                     >
-                      <Camera className="w-4 h-4" />
-                      Add photo (optional)
+                      <span className={`text-sm font-medium ${weightRange === w.value ? "text-emerald-700" : "text-gray-700"}`}>
+                        {w.label}
+                      </span>
+                      <span className={`block text-xs mt-0.5 ${weightRange === w.value ? "text-emerald-500" : "text-gray-400"}`}>
+                        {w.hint}
+                      </span>
                     </button>
-                  )}
+                  ))}
                 </div>
+              </div>
+
+              {/* Photo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                {imagePreview ? (
+                  <div className="relative h-[42px] flex items-center gap-2">
+                    <img src={imagePreview} alt="Preview" className="w-10 h-10 object-cover rounded-lg" />
+                    <span className="text-sm text-gray-600 truncate flex-1">{image?.name}</span>
+                    <button
+                      onClick={() => { setImage(null); setImagePreview(""); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                      className="p-1 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-sm hover:border-emerald-400 hover:text-emerald-600 transition-colors inline-flex items-center justify-center gap-2"
+                  >
+                    <Camera className="w-4 h-4" />
+                    Add photo (optional)
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>
@@ -333,7 +350,7 @@ export default function DonationForm() {
             exit="exit"
           >
             <h2 className="text-xl font-bold text-gray-900 mb-1">Your details</h2>
-            <p className="text-gray-500 text-sm mb-6">For coordinating the pickup. Your info stays private.</p>
+            <p className="text-gray-500 text-sm mb-6">For coordinating the courier pickup. Your info stays private.</p>
 
             <div className="space-y-4">
               <div>
@@ -376,15 +393,18 @@ export default function DonationForm() {
                 />
                 {fieldErrors.donorEmail && <p className="text-xs text-red-500 mt-1">{fieldErrors.donorEmail}</p>}
               </div>
+
+              {/* Address — simple fields, no autocomplete */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Pickup Address <span className="text-red-400">*</span>
                 </label>
-                <AddressInput
+                <textarea
                   value={donorAddress}
-                  onChange={setDonorAddress}
-                  onSelect={handleAddressSelect}
-                  placeholder="Start typing your address..."
+                  onChange={(e) => setDonorAddress(e.target.value)}
+                  placeholder="Flat/House no., Building, Street, Landmark"
+                  rows={2}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none transition-colors"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -397,6 +417,7 @@ export default function DonationForm() {
                     value={donorPincode}
                     onChange={(e) => setDonorPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     onBlur={() => validateField("donorPincode", donorPincode)}
+                    placeholder="500001"
                     maxLength={6}
                     className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-colors ${
                       fieldErrors.donorPincode ? "border-red-300 focus:border-red-500 focus:ring-red-200" : "border-gray-300 focus:border-emerald-500"
@@ -405,17 +426,14 @@ export default function DonationForm() {
                   {fieldErrors.donorPincode && <p className="text-xs text-red-500 mt-1">{fieldErrors.donorPincode}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Area</label>
-                  <select
-                    value={donorArea}
-                    onChange={(e) => setDonorArea(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white transition-colors"
-                  >
-                    <option value="">Select area</option>
-                    {HYDERABAD_AREAS.map((area) => (
-                      <option key={area} value={area}>{area}</option>
-                    ))}
-                  </select>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                  <input
+                    type="text"
+                    value={donorCity}
+                    onChange={(e) => setDonorCity(e.target.value)}
+                    placeholder="Hyderabad"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
+                  />
                 </div>
               </div>
               <div>
@@ -472,7 +490,7 @@ export default function DonationForm() {
                 <p><span className="text-gray-400">Title:</span> <span className="text-gray-900">{title}</span></p>
                 {description && <p><span className="text-gray-400">Description:</span> <span className="text-gray-900">{description}</span></p>}
                 <p><span className="text-gray-400">Condition:</span> <span className="text-gray-900">{condition.replace("_", " ")}</span></p>
-                <p><span className="text-gray-400">Quantity:</span> <span className="text-gray-900">{quantity}</span></p>
+                <p><span className="text-gray-400">Weight:</span> <span className="text-gray-900">{WEIGHT_RANGES.find((w) => w.value === weightRange)?.label || weightRange}</span></p>
                 {imagePreview && <img src={imagePreview} alt="Donation" className="w-24 h-24 object-cover rounded-lg mt-2" />}
               </div>
 
@@ -486,7 +504,7 @@ export default function DonationForm() {
                 {donorEmail && <p><span className="text-gray-400">Email:</span> <span className="text-gray-900">{donorEmail}</span></p>}
                 <p><span className="text-gray-400">Address:</span> <span className="text-gray-900">{donorAddress}</span></p>
                 <p><span className="text-gray-400">Pincode:</span> <span className="text-gray-900">{donorPincode}</span></p>
-                {donorArea && <p><span className="text-gray-400">Area:</span> <span className="text-gray-900">{donorArea}</span></p>}
+                {donorCity && <p><span className="text-gray-400">City:</span> <span className="text-gray-900">{donorCity}</span></p>}
                 {preferredSlot && <p><span className="text-gray-400">Preferred time:</span> <span className="text-gray-900 capitalize">{preferredSlot}</span></p>}
                 <p><span className="text-gray-400">WhatsApp updates:</span> <span className="text-gray-900">{whatsappOptin ? "Yes" : "No"}</span></p>
               </div>

@@ -68,6 +68,7 @@ export default function SuccessContent() {
   const name = searchParams.get("name") || "";
   const phone = searchParams.get("phone") || "";
   const pincode = searchParams.get("pincode") || "";
+  const weightGrams = parseInt(searchParams.get("weight") || "2000");
 
   const [estimate, setEstimate] = useState<ShippingEstimate | null>(null);
   const [loadingEstimate, setLoadingEstimate] = useState(false);
@@ -95,7 +96,7 @@ export default function SuccessContent() {
       fetch("/api/shipping/estimate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pincode, weightGrams: 2000 }),
+        body: JSON.stringify({ pincode, weightGrams }),
       })
         .then((res) => res.json())
         .then((data) => {
@@ -122,7 +123,7 @@ export default function SuccessContent() {
       const payRes = await fetch("/api/shipping/pay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ donationId, weightGrams: 2000 }),
+        body: JSON.stringify({ donationId, weightGrams }),
       });
       const payData: PaymentOrder & { error?: string } = await payRes.json();
 
