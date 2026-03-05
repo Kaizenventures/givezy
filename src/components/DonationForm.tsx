@@ -287,7 +287,7 @@ export default function DonationForm() {
                   <Package className="w-3.5 h-3.5 inline mr-1" />
                   Approximate Weight <span className="text-red-400">*</span>
                 </label>
-                <p className="text-xs text-gray-400 mb-2">This helps us calculate shipping costs accurately.</p>
+                <p className="text-xs text-gray-400 mb-2">Pick your best estimate. The courier will weigh the package at pickup — if the actual weight is significantly different, the shipping cost may be adjusted.</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {WEIGHT_RANGES.map((w) => (
                     <button
