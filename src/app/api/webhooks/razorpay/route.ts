@@ -27,6 +27,9 @@ interface RazorpayWebhookPayload {
         id?: string;
         order_id?: string;
         status?: string;
+        method?: string;
+        error_description?: string;
+        error_reason?: string;
       };
     };
   };
@@ -82,10 +85,18 @@ export async function POST(req: NextRequest) {
   }
 
   if (event === "payment.failed") {
+    // A later successful retry must not be overwritten by a stale failure
     if (shipment.paymentStatus !== "paid") {
+      const now = new Date().toISOString();
       await db
         .update(shipments)
-        .set({ paymentStatus: "failed", updatedAt: new Date().toISOString() })
+        .set({
+          paymentStatus: "failed",
+          paymentMethod: payment.method || null,
+          failureReason: payment.error_description || payment.error_reason || "Payment failed",
+          failedAt: now,
+          updatedAt: now,
+        })
         .where(eq(shipments.id, shipment.id));
     }
     return NextResponse.json({ received: true, event });
@@ -95,6 +106,7 @@ export async function POST(req: NextRequest) {
     const result = await settlePayment({
       shipmentId: shipment.id,
       razorpayPaymentId: payment.id,
+      paymentMethod: payment.method || null,
     });
     console.log(`[razorpay-webhook] ${payment.order_id} -> ${result.status}`);
     return NextResponse.json({ received: true, result: result.status });

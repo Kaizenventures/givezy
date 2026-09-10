@@ -14,9 +14,21 @@ interface Bucket {
   priceDisplay: string;
 }
 
+interface Genre {
+  id: string;
+  label: string;
+}
+
 interface Config {
   buckets: Bucket[];
-  content: { clothesComingSoon: boolean; whatsappNumber: string };
+  countBuckets: Bucket[];
+  genres: Genre[];
+  content: {
+    clothesComingSoon: boolean;
+    whatsappNumber: string;
+    capMessageTitle: string;
+    capMessageBody: string;
+  };
   accepting: boolean;
   remaining: number | null;
   demo: boolean;
@@ -74,6 +86,8 @@ export default function DonationForm() {
   const [category, setCategory] = useState("books");
   const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([]);
   const [bucketId, setBucketId] = useState("");
+  const [sizeMode, setSizeMode] = useState<"weight" | "count">("count");
+  const [genres, setGenres] = useState<string[]>([]);
 
   const [donorName, setDonorName] = useState("");
   const [donorPhone, setDonorPhone] = useState("");
@@ -103,7 +117,13 @@ export default function DonationForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const selectedBucket = config?.buckets.find((b) => b.id === bucketId) || null;
+  // Both scales share bucket ids, so switching the toggle keeps the selection
+  const activeBuckets = (sizeMode === "count" ? config?.countBuckets : config?.buckets) || [];
+  const selectedBucket = activeBuckets.find((b) => b.id === bucketId) || null;
+
+  function toggleGenre(id: string) {
+    setGenres((prev) => (prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]));
+  }
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -149,7 +169,7 @@ export default function DonationForm() {
     if (donorEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(donorEmail)) errs.donorEmail = "Enter a valid email address";
     if (!donorAddress.trim()) errs.donorAddress = "Please enter your pickup address";
     if (donorPincode.length !== 6) errs.donorPincode = "Pincode must be 6 digits";
-    if (!bucketId) errs.bucket = "Please pick an approximate weight";
+    if (!bucketId) errs.bucket = "Please pick roughly how much you're donating";
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
   }, [donorName, donorPhone, donorEmail, donorAddress, donorPincode, bucketId]);
@@ -167,6 +187,8 @@ export default function DonationForm() {
       const formData = new FormData();
       formData.append("category", category);
       formData.append("weightBucket", bucketId);
+      formData.append("sizeMode", sizeMode);
+      genres.forEach((g) => formData.append("genres", g));
       formData.append("donorName", donorName);
       formData.append("donorPhone", donorPhone);
       formData.append("donorEmail", donorEmail);
@@ -243,7 +265,7 @@ export default function DonationForm() {
     }
   }, [
     validate, selectedBucket, category, bucketId, donorName, donorPhone, donorEmail,
-    donorAddress, donorPincode, donorCity, whatsappOptin, photos, router,
+    donorAddress, donorPincode, donorCity, whatsappOptin, photos, router, sizeMode, genres,
   ]);
 
   async function handleWaitlist() {
@@ -298,7 +320,7 @@ export default function DonationForm() {
         <p className="text-gray-500 text-sm max-w-sm mx-auto">
           {paymentsDown
             ? `We'll reach out on ${donorPhone} the moment doorstep pickups go live.`
-            : `We're at capacity for now. We'll reach out on ${donorPhone} as soon as a pickup slot opens up.`}
+            : `You're at the front of tomorrow's queue. We'll message ${donorPhone} to confirm your pickup — nothing to pay now.`}
         </p>
       </div>
     );
@@ -324,12 +346,12 @@ export default function DonationForm() {
       {collectOnly && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
           <p className="font-semibold text-amber-900 text-sm">
-            {paymentsDown ? "Pickups open very soon" : "We're at capacity right now"}
+            {paymentsDown ? "Pickups open very soon" : config?.content.capMessageTitle}
           </p>
           <p className="text-amber-700 text-sm mt-1">
             {paymentsDown
               ? "We're putting the finishing touches on doorstep pickups. Leave your details and you'll be first to know when we go live."
-              : "Leave your name and number and we'll get in touch the moment a pickup slot opens up."}
+              : config?.content.capMessageBody}
           </p>
         </div>
       )}
@@ -415,20 +437,68 @@ export default function DonationForm() {
         )}
       </div>
 
-      {/* Weight bucket */}
-      <h3 className="text-sm font-semibold text-gray-900 mb-1">
-        <Package className="w-3.5 h-3.5 inline mr-1" />
-        Approximate weight of the above books
-      </h3>
+      {/* Genres */}
+      {(config?.genres?.length ?? 0) > 0 && (
+        <>
+          <h3 className="text-sm font-semibold text-gray-900 mb-1">What kind of books?</h3>
+          <p className="text-xs text-gray-400 mb-3">
+            Optional — helps us get them to the right school or library. Pick as many as apply.
+          </p>
+          <div className="flex flex-wrap gap-2 mb-8">
+            {config?.genres.map((g) => {
+              const on = genres.includes(g.id);
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => toggleGenre(g.id)}
+                  className={`px-3.5 py-2 rounded-full border text-sm font-medium transition-all ${
+                    on
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                      : "border-gray-200 text-gray-600 hover:border-gray-300"
+                  }`}
+                >
+                  {g.label}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* How much — by book count or by weight */}
+      <div className="flex items-center justify-between mb-1 gap-3 flex-wrap">
+        <h3 className="text-sm font-semibold text-gray-900">
+          <Package className="w-3.5 h-3.5 inline mr-1" />
+          Roughly how much are you donating?
+        </h3>
+        <div className="flex bg-gray-100 rounded-lg p-0.5" role="group" aria-label="Size by">
+          {(["count", "weight"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setSizeMode(m)}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                sizeMode === m ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              {m === "count" ? "By books" : "By weight"}
+            </button>
+          ))}
+        </div>
+      </div>
       <p className="text-xs text-gray-400 mb-3">
-        Pick your best estimate. The courier weighs the package at pickup — if it&apos;s well over what you
-        selected, we may need to adjust the charge.
+        {sizeMode === "count"
+          ? "Not sure? Count the books — it's easier to judge than weight. Same price either way."
+          : "Pick your best estimate. The courier weighs the package at pickup — if it's well over what you selected, we may need to adjust the charge."}
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
-        {config?.buckets.map((b) => (
+        {activeBuckets.map((b) => (
           <button
             key={b.id}
+            type="button"
             onClick={() => setBucketId(b.id)}
             className={`py-3 px-3 rounded-xl border text-left transition-all ${
               bucketId === b.id ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-gray-300"
@@ -453,7 +523,9 @@ export default function DonationForm() {
         <div className="flex items-center justify-between bg-gray-900 text-white rounded-xl px-5 py-4 my-6">
           <div>
             <p className="text-xs text-gray-400">Payable amount</p>
-            <p className="text-xs text-gray-500 mt-0.5">Covers doorstep pickup, up to {selectedBucket.maxKg} kg</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Covers doorstep pickup, up to {selectedBucket.maxKg} kg
+            </p>
           </div>
           <p className="text-2xl font-bold">{selectedBucket.priceDisplay}</p>
         </div>
@@ -544,7 +616,7 @@ export default function DonationForm() {
           className="w-full mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-amber-600 rounded-xl hover:bg-amber-700 transition-all disabled:opacity-50"
         >
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-          {paymentsDown ? "Notify me when pickups open" : "Join the waiting list"}
+          {paymentsDown ? "Notify me when pickups open" : "Save my spot for tomorrow"}
         </button>
       ) : (
         <>

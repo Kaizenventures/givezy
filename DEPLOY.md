@@ -4,7 +4,7 @@
 - **Droplet IP:** 157.245.102.139
 - **Domain:** givezy.in (Porkbun)
 - **Repo:** github.com/Kaizenventures/givezy
-- **Admin:** https://givezy.in/admin/login
+- **Admin:** https://givezy.in/admin/login — day-to-day guide in [ADMIN.md](./ADMIN.md)
 - **Razorpay webhook:** https://givezy.in/api/webhooks/razorpay
 - **Cost:** ~$4.60/mo
 

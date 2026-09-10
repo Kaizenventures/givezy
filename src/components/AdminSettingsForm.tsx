@@ -2,21 +2,27 @@
 
 import { useState } from "react";
 import { Loader2, Save, Plus, Trash2 } from "lucide-react";
-import type { WeightBucket, Caps, SiteContent } from "@/lib/settings";
+import type { WeightBucket, Caps, SiteContent, Genre } from "@/lib/settings";
 
 type Tab = "pricing" | "caps" | "content";
 
 export default function AdminSettingsForm({
   initialBuckets,
+  initialCountBuckets,
+  initialGenres,
   initialCaps,
   initialContent,
 }: {
   initialBuckets: WeightBucket[];
+  initialCountBuckets: WeightBucket[];
+  initialGenres: Genre[];
   initialCaps: Caps;
   initialContent: SiteContent;
 }) {
   const [tab, setTab] = useState<Tab>("pricing");
   const [buckets, setBuckets] = useState<WeightBucket[]>(initialBuckets);
+  const [countBuckets, setCountBuckets] = useState<WeightBucket[]>(initialCountBuckets);
+  const [genres, setGenres] = useState<Genre[]>(initialGenres);
   const [caps, setCaps] = useState<Caps>(initialCaps);
   const [content, setContent] = useState<SiteContent>(initialContent);
   const [saving, setSaving] = useState(false);
@@ -29,7 +35,7 @@ export default function AdminSettingsForm({
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ buckets, caps, content }),
+        body: JSON.stringify({ buckets, countBuckets, genres, caps, content }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not save");
@@ -43,6 +49,12 @@ export default function AdminSettingsForm({
 
   function updateBucket(i: number, patch: Partial<WeightBucket>) {
     setBuckets((prev) => prev.map((b, idx) => (idx === i ? { ...b, ...patch } : b)));
+  }
+
+  // Book-count options mirror the weight options and must share their ids, so
+  // only the wording differs between the two scales.
+  function updateCountBucket(i: number, patch: Partial<WeightBucket>) {
+    setCountBuckets((prev) => prev.map((b, idx) => (idx === i ? { ...b, ...patch } : b)));
   }
 
   return (
@@ -157,6 +169,112 @@ export default function AdminSettingsForm({
             <Plus className="w-4 h-4" />
             Add weight option
           </button>
+
+          <hr className="border-gray-200 !mt-8" />
+
+          <div>
+            <h3 className="font-semibold text-gray-900">Book-count wording</h3>
+            <p className="text-sm text-gray-500 mt-1 mb-3">
+              The same options described in books rather than kilos, for donors who pick &ldquo;By
+              books&rdquo;. Prices come from the weight options above — only the wording changes here.
+            </p>
+            <div className="space-y-3">
+              {countBuckets.map((b, i) => (
+                <div key={i} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                  <Labeled label="Matches option ID">
+                    <select
+                      value={b.id}
+                      onChange={(e) => {
+                        const src = buckets.find((x) => x.id === e.target.value);
+                        updateCountBucket(i, {
+                          id: e.target.value,
+                          pricePaise: src?.pricePaise ?? b.pricePaise,
+                          maxKg: src?.maxKg ?? b.maxKg,
+                          grams: src?.grams ?? b.grams,
+                        });
+                      }}
+                      className={inp}
+                    >
+                      {buckets.map((x) => (
+                        <option key={x.id} value={x.id}>{x.id}</option>
+                      ))}
+                    </select>
+                  </Labeled>
+                  <Labeled label="Label">
+                    <input value={b.label} onChange={(e) => updateCountBucket(i, { label: e.target.value })} className={inp} />
+                  </Labeled>
+                  <div className="flex items-end gap-2">
+                    <Labeled label="Hint" className="flex-1">
+                      <input value={b.hint} onChange={(e) => updateCountBucket(i, { hint: e.target.value })} className={inp} />
+                    </Labeled>
+                    <button
+                      onClick={() => setCountBuckets((prev) => prev.filter((_, idx) => idx !== i))}
+                      disabled={countBuckets.length <= 1}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg disabled:opacity-30"
+                      aria-label="Remove"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() =>
+                setCountBuckets((prev) => {
+                  const src = buckets[0];
+                  return [...prev, { id: src?.id ?? "upto-5kg", label: "New wording", hint: "", maxKg: src?.maxKg ?? 5, pricePaise: src?.pricePaise ?? 19900, grams: src?.grams ?? 4000 }];
+                })
+              }
+              className="inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium hover:underline mt-3"
+            >
+              <Plus className="w-4 h-4" />
+              Add wording
+            </button>
+          </div>
+
+          <hr className="border-gray-200 !mt-8" />
+
+          <div>
+            <h3 className="font-semibold text-gray-900">Book categories</h3>
+            <p className="text-sm text-gray-500 mt-1 mb-3">
+              Optional tags donors can pick, so you know what&apos;s coming before it arrives.
+            </p>
+            <div className="space-y-2">
+              {genres.map((g, i) => (
+                <div key={i} className="flex items-end gap-2">
+                  <Labeled label="ID" className="w-40">
+                    <input
+                      value={g.id}
+                      onChange={(e) => setGenres((prev) => prev.map((x, idx) => (idx === i ? { ...x, id: e.target.value } : x)))}
+                      className={inp}
+                    />
+                  </Labeled>
+                  <Labeled label="Label shown to donors" className="flex-1">
+                    <input
+                      value={g.label}
+                      onChange={(e) => setGenres((prev) => prev.map((x, idx) => (idx === i ? { ...x, label: e.target.value } : x)))}
+                      className={inp}
+                    />
+                  </Labeled>
+                  <button
+                    onClick={() => setGenres((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                    aria-label="Remove category"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setGenres((prev) => [...prev, { id: `genre-${prev.length + 1}`, label: "New category" }])}
+              className="inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium hover:underline mt-3"
+            >
+              <Plus className="w-4 h-4" />
+              Add category
+            </button>
+          </div>
         </div>
       )}
 
@@ -179,9 +297,19 @@ export default function AdminSettingsForm({
             </Labeled>
           ))}
           <p className="text-xs text-gray-400">
-            Weeks start on Monday. Only paid donations count — abandoned checkouts and cancellations don&apos;t
-            use up a slot.
+            Weeks start on Monday (IST). Only paid donations count — abandoned checkouts and
+            cancellations don&apos;t use up a slot.
           </p>
+
+          <hr className="border-gray-200" />
+
+          <h3 className="font-semibold text-gray-900">What donors see when you&apos;re full</h3>
+          <Labeled label="Heading">
+            <input value={content.capMessageTitle} onChange={(e) => setContent({ ...content, capMessageTitle: e.target.value })} className={inp} />
+          </Labeled>
+          <Labeled label="Message">
+            <textarea rows={3} value={content.capMessageBody} onChange={(e) => setContent({ ...content, capMessageBody: e.target.value })} className={`${inp} resize-y`} />
+          </Labeled>
         </div>
       )}
 

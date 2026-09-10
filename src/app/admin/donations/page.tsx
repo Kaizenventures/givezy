@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function DonationsListPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; category?: string }>;
+  searchParams: Promise<{ status?: string; category?: string; pincode?: string; area?: string }>;
 }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/admin/login");
@@ -24,6 +24,11 @@ export default async function DonationsListPage({
   let filtered = allDonations;
   if (params.status) filtered = filtered.filter((d) => d.status === params.status);
   if (params.category) filtered = filtered.filter((d) => d.category === params.category);
+  if (params.pincode) filtered = filtered.filter((d) => d.donorPincode === params.pincode);
+  if (params.area)
+    filtered = filtered.filter(
+      (d) => d.donorArea?.trim().toLowerCase() === params.area!.trim().toLowerCase(),
+    );
 
   return (
     <AdminShell>

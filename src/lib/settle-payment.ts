@@ -19,6 +19,7 @@ export async function settlePayment(params: {
   shipmentId: string;
   razorpayPaymentId: string;
   razorpaySignature?: string | null;
+  paymentMethod?: string | null;
 }): Promise<SettleResult> {
   const [shipment] = await db
     .select()
@@ -39,6 +40,7 @@ export async function settlePayment(params: {
       paymentStatus: "paid",
       razorpayPaymentId: params.razorpayPaymentId,
       razorpaySignature: params.razorpaySignature ?? null,
+      paymentMethod: params.paymentMethod ?? null,
       updatedAt: now,
     })
     .where(eq(shipments.id, shipment.id));

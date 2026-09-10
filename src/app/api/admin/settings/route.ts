@@ -3,6 +3,8 @@ import { isAdmin } from "@/lib/admin-guard";
 import {
   getSiteConfig,
   setBuckets,
+  setCountBuckets,
+  setGenres,
   setCaps,
   setContent,
   DEFAULT_CONTENT,
@@ -10,6 +12,7 @@ import {
   type WeightBucket,
   type Caps,
   type SiteContent,
+  type Genre,
 } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +41,18 @@ function sanitizeBuckets(input: unknown): WeightBucket[] | null {
       pricePaise: Math.round(pricePaise),
       grams: Number.isFinite(Number(b.grams)) && Number(b.grams) > 0 ? Math.round(Number(b.grams)) : Math.round((Number.isFinite(maxKg) ? maxKg : 5) * 800),
     });
+  }
+  return out;
+}
+
+function sanitizeGenres(input: unknown): Genre[] | null {
+  if (!Array.isArray(input)) return null;
+  const out: Genre[] = [];
+  for (const raw of input) {
+    const g = raw as Partial<Genre>;
+    const id = String(g.id || "").trim();
+    if (!id) return null;
+    out.push({ id: id.slice(0, 40), label: String(g.label || id).slice(0, 80) });
   }
   return out;
 }
@@ -78,6 +93,8 @@ function sanitizeContent(input: unknown): SiteContent {
     leadPopupDelaySeconds: Number.isFinite(Number(c.leadPopupDelaySeconds))
       ? Math.min(120, Math.max(0, Math.floor(Number(c.leadPopupDelaySeconds))))
       : DEFAULT_CONTENT.leadPopupDelaySeconds,
+    capMessageTitle: text(c.capMessageTitle, DEFAULT_CONTENT.capMessageTitle, 160),
+    capMessageBody: text(c.capMessageBody, DEFAULT_CONTENT.capMessageBody, 600),
   };
 }
 
@@ -95,6 +112,20 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: "Invalid pricing configuration" }, { status: 400 });
       }
       await setBuckets(buckets);
+    }
+    if (body.countBuckets !== undefined) {
+      const countBuckets = sanitizeBuckets(body.countBuckets);
+      if (!countBuckets) {
+        return NextResponse.json({ error: "Invalid book-count configuration" }, { status: 400 });
+      }
+      await setCountBuckets(countBuckets);
+    }
+    if (body.genres !== undefined) {
+      const genres = sanitizeGenres(body.genres);
+      if (!genres) {
+        return NextResponse.json({ error: "Invalid genre configuration" }, { status: 400 });
+      }
+      await setGenres(genres);
     }
     if (body.caps !== undefined) await setCaps(sanitizeCaps(body.caps));
     if (body.content !== undefined) await setContent(sanitizeContent(body.content));

@@ -14,6 +14,10 @@ export const donations = sqliteTable("donations", {
   // v2: photos + flat-priced weight bucket
   photos: text("photos").notNull().default("[]"), // JSON array of image URLs
   weightBucket: text("weight_bucket").notNull().default("upto-5kg"),
+  // Donors may size their donation by weight or by book count — the chosen
+  // bucket id lives in weightBucket either way; this records which scale it came from.
+  sizeMode: text("size_mode").notNull().default("weight"), // weight | count
+  genres: text("genres").notNull().default("[]"), // JSON array of genre ids
   weightRange: text("weight_range").notNull().default("1-3kg"), // legacy
   imageUrl: text("image_url"), // legacy single photo
 
@@ -59,6 +63,9 @@ export const shipments = sqliteTable("shipments", {
 
   // Razorpay
   paymentStatus: text("payment_status").notNull().default("pending"), // pending | paid | failed | refunded
+  paymentMethod: text("payment_method"), // upi | card | netbanking | wallet — as reported by Razorpay
+  failureReason: text("failure_reason"), // human-readable decline reason for the failed-payments log
+  failedAt: text("failed_at"),
   razorpayOrderId: text("razorpay_order_id"),
   razorpayPaymentId: text("razorpay_payment_id"),
   razorpaySignature: text("razorpay_signature"),
