@@ -11,6 +11,7 @@ services:
       - app-data:/app/data
       - app-uploads:/app/public/uploads
     environment:
+      - TZ=Asia/Kolkata
       - DATABASE_URL=file:./data/givezy.db
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXTAUTH_URL=https://givezy.in
@@ -30,7 +31,17 @@ services:
       - PICKUP_STATE=${PICKUP_STATE:-Telangana}
       - PICKUP_PINCODE=${PICKUP_PINCODE:-500001}
       - PICKUP_PHONE=${PICKUP_PHONE}
-      # Service charge
+      # Razorpay webhook (payment.captured / payment.failed)
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
+      # Demo mode — auto-disabled once real Razorpay keys are present
+      - DEMO_MODE=${DEMO_MODE:-false}
+      # Transactional email (optional; no-ops when unset)
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - MAIL_FROM=${MAIL_FROM:-}
+      - ADMIN_NOTIFY_EMAIL=${ADMIN_NOTIFY_EMAIL:-}
 
   caddy:
     image: caddy:2-alpine

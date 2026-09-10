@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { shipments, donations } from "@/lib/schema";
+import { shipments } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { verifyPaymentSignature } from "@/lib/razorpay";
+import { settlePayment } from "@/lib/settle-payment";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/shipping/verify
@@ -14,6 +16,9 @@ import { verifyPaymentSignature } from "@/lib/razorpay";
  */
 export async function POST(req: NextRequest) {
   try {
+    const limited = enforceRateLimit(req, "verify", 20, 10 * 60 * 1000);
+    if (limited) return limited;
+
     const body = await req.json();
     const { shipmentId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = body;
 
@@ -50,20 +55,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Payment verification failed" }, { status: 400 });
     }
 
-    await db
-      .update(shipments)
-      .set({
-        paymentStatus: "paid",
-        razorpayPaymentId,
-        razorpaySignature,
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(shipments.id, shipmentId));
-
-    await db
-      .update(donations)
-      .set({ status: "paid", updatedAt: new Date().toISOString() })
-      .where(eq(donations.id, shipment.donationId));
+    await settlePayment({ shipmentId, razorpayPaymentId, razorpaySignature });
 
     return NextResponse.json({
       success: true,

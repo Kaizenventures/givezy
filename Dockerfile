@@ -1,6 +1,11 @@
 FROM node:20-alpine
 WORKDIR /app
 
+# Alpine ships no zoneinfo, so TZ is silently ignored without this package.
+# Caps roll over and admin dates render in IST, not UTC.
+RUN apk add --no-cache tzdata
+ENV TZ=Asia/Kolkata
+
 COPY package.json package-lock.json ./
 RUN npm ci
 
@@ -10,9 +15,7 @@ ENV NODE_OPTIONS="--max-old-space-size=1024"
 
 # NEXT_PUBLIC_ vars must be available at build time (Next.js inlines them)
 ARG NEXT_PUBLIC_RAZORPAY_KEY_ID=""
-ARG NEXT_PUBLIC_SERVICE_CHARGE_PERCENT=5
 ENV NEXT_PUBLIC_RAZORPAY_KEY_ID=${NEXT_PUBLIC_RAZORPAY_KEY_ID}
-ENV NEXT_PUBLIC_SERVICE_CHARGE_PERCENT=${NEXT_PUBLIC_SERVICE_CHARGE_PERCENT}
 
 RUN npm run build
 

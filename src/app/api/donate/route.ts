@@ -7,9 +7,16 @@ import path from "path";
 import { getBuckets, findBucket } from "@/lib/settings";
 import { checkCapacity } from "@/lib/capacity";
 import { createRazorpayOrder } from "@/lib/razorpay";
+import { isDemoMode, demoPaymentId } from "@/lib/demo";
+import { settlePayment } from "@/lib/settle-payment";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 const MAX_PHOTOS = 6;
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+// Total upload budget per submission — the real guard against filling the disk.
+// Indian mobile carriers put many users behind one CGNAT address, so the
+// per-IP request limit has to stay generous; this caps the damage instead.
+const MAX_TOTAL_BYTES = 15 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
 
 async function savePhoto(file: File): Promise<string> {
@@ -31,6 +38,18 @@ async function savePhoto(file: File): Promise<string> {
  */
 export async function POST(req: NextRequest) {
   try {
+    // Photo uploads write to disk, so cap how often one client can submit
+    const limited = enforceRateLimit(req, "donate", 12, 10 * 60 * 1000);
+    if (limited) return limited;
+
+    const declaredLength = Number(req.headers.get("content-length") || 0);
+    if (declaredLength > MAX_TOTAL_BYTES) {
+      return NextResponse.json(
+        { error: "Those photos are too large. Please add fewer or smaller images." },
+        { status: 413 },
+      );
+    }
+
     // Capacity gate — the client also checks, but never trust it
     const capacity = await checkCapacity();
     if (!capacity.available) {
@@ -76,9 +95,17 @@ export async function POST(req: NextRequest) {
     if (files.length > MAX_PHOTOS) {
       return NextResponse.json({ error: `At most ${MAX_PHOTOS} photos` }, { status: 400 });
     }
+    let totalBytes = 0;
     for (const f of files) {
       if (f.size > MAX_PHOTO_BYTES) {
         return NextResponse.json({ error: "Each photo must be under 5 MB" }, { status: 400 });
+      }
+      totalBytes += f.size;
+      if (totalBytes > MAX_TOTAL_BYTES) {
+        return NextResponse.json(
+          { error: "Those photos are too large. Please add fewer or smaller images." },
+          { status: 413 },
+        );
       }
       if (f.type && !ALLOWED_TYPES.includes(f.type)) {
         return NextResponse.json({ error: "Photos must be JPEG, PNG or WebP" }, { status: 400 });
@@ -120,6 +147,23 @@ export async function POST(req: NextRequest) {
         fulfillmentStatus: "pending",
       })
       .returning();
+
+    // Demo mode: no gateway available, so record the donation as paid and let
+    // the caller skip straight to the thank-you page.
+    if (isDemoMode()) {
+      await settlePayment({ shipmentId: shipment.id, razorpayPaymentId: demoPaymentId() });
+      return NextResponse.json(
+        {
+          success: true,
+          demo: true,
+          donationId: donation.id,
+          shipmentId: shipment.id,
+          amount: bucket.pricePaise,
+          bucket: { id: bucket.id, label: bucket.label, maxKg: bucket.maxKg },
+        },
+        { status: 201 },
+      );
+    }
 
     const order = await createRazorpayOrder(bucket.pricePaise, shipment.id);
     if (order.error) {

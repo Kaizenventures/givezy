@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { db } from "@/lib/db";
 import { leads } from "@/lib/schema";
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, "leads", 20, 10 * 60 * 1000);
+  if (limited) return limited;
+
   try {
     const body = await req.json();
     const { name, email, phone, city, source } = body;

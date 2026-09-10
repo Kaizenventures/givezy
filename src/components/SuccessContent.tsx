@@ -20,12 +20,16 @@ export default function SuccessContent({
   bucketLabel: string | null;
 }) {
   const [content, setContent] = useState<NextStep | null>(null);
+  const [demo, setDemo] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/config")
       .then((r) => r.json())
-      .then((d) => setContent(d.content))
+      .then((d) => {
+        setContent(d.content);
+        setDemo(!!d.demo);
+      })
       .catch(() => setContent(null))
       .finally(() => setLoading(false));
   }, []);
@@ -39,6 +43,15 @@ export default function SuccessContent({
 
   return (
     <div className="max-w-xl mx-auto px-4 py-12">
+      {demo && (
+        <div className="mb-6 p-4 bg-amber-100 border-2 border-amber-400 rounded-xl">
+          <p className="font-bold text-amber-900 text-sm">⚠️ Demo mode — nothing was charged</p>
+          <p className="text-amber-800 text-sm mt-1">
+            This is a preview of the real confirmation screen. No payment was taken and no bag will be sent.
+          </p>
+        </div>
+      )}
+
       <div className="text-center mb-10">
         <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4">
           <CheckCircle2 className="w-8 h-8" />

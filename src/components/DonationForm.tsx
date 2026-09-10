@@ -19,6 +19,7 @@ interface Config {
   content: { clothesComingSoon: boolean; whatsappNumber: string };
   accepting: boolean;
   remaining: number | null;
+  demo: boolean;
 }
 
 declare global {
@@ -184,6 +185,12 @@ export default function DonationForm() {
       }
       if (!res.ok) throw new Error(data.error || "Something went wrong");
 
+      // Demo mode settles server-side; there is no gateway to open
+      if (data.demo) {
+        router.push(`/donate/success?id=${data.donationId}`);
+        return;
+      }
+
       const key = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
       if (!key) throw new Error("Payments are not configured. Please contact us.");
 
@@ -295,6 +302,16 @@ export default function DonationForm() {
     <div className="max-w-xl mx-auto">
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">{error}</div>
+      )}
+
+      {config?.demo && (
+        <div className="mb-6 p-4 bg-amber-100 border-2 border-amber-400 rounded-xl">
+          <p className="font-bold text-amber-900 text-sm">⚠️ Demo mode — no real payment</p>
+          <p className="text-amber-800 text-sm mt-1">
+            Payments aren&apos;t connected yet. Submitting this form records a test donation and skips
+            checkout entirely. Nothing is charged and no pickup will happen.
+          </p>
+        </div>
       )}
 
       {atCapacity && (
@@ -528,19 +545,23 @@ export default function DonationForm() {
             {submitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Opening payment…
+                {config?.demo ? "Recording…" : "Opening payment…"}
               </>
             ) : (
               <>
-                Pay {selectedBucket?.priceDisplay ?? ""} now
+                {config?.demo
+                  ? `Simulate paying ${selectedBucket?.priceDisplay ?? ""}`
+                  : `Pay ${selectedBucket?.priceDisplay ?? ""} now`}
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
-          <p className="mt-3 text-center text-xs text-gray-400 inline-flex items-center justify-center gap-1 w-full">
-            <Lock className="w-3 h-3" />
-            Secure payment via Razorpay
-          </p>
+          {!config?.demo && (
+            <p className="mt-3 text-center text-xs text-gray-400 inline-flex items-center justify-center gap-1 w-full">
+              <Lock className="w-3 h-3" />
+              Secure payment via Razorpay
+            </p>
+          )}
         </>
       )}
     </div>

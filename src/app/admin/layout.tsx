@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AdminSignOut from "@/components/AdminSignOut";
+import { isDemoMode } from "@/lib/demo";
 
 export default async function AdminLayout({
   children,
@@ -42,6 +43,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </div>
+      {isDemoMode() && (
+        <div className="bg-amber-100 border-b-2 border-amber-400">
+          <div className="max-w-5xl mx-auto px-4 py-2.5 text-sm text-amber-900">
+            <strong>Demo mode is on.</strong> Donations are recorded as paid without any real payment.
+            Set <code className="bg-amber-200 px-1 rounded">DEMO_MODE=false</code> (or add live Razorpay
+            keys) before taking real donations.
+          </div>
+        </div>
+      )}
       <div className="max-w-5xl mx-auto px-4 py-8">{children}</div>
     </div>
   );

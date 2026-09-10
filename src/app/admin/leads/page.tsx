@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { leads } from "@/lib/schema";
 import { desc } from "drizzle-orm";
 import { AdminShell } from "../layout";
+import LeadImport from "@/components/LeadImport";
 
 export const dynamic = "force-dynamic";
 
@@ -15,13 +16,16 @@ export default async function AdminLeadsPage() {
   const rows = await db.select().from(leads).orderBy(desc(leads.createdAt));
   const timed = rows.filter((r) => r.source === "homepage_timed").length;
   const exitIntent = rows.filter((r) => r.source === "homepage_exit").length;
+  const imported = rows.filter((r) => r.source === "email_inbox" || r.source === "manual").length;
 
   return (
     <AdminShell>
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Leads</h1>
       <p className="text-sm text-gray-500 mb-6">
-        {rows.length} captured from the homepage popup · {timed} on the timer, {exitIntent} on exit intent.
+        {rows.length} total · {timed} timed popup, {exitIntent} exit intent, {imported} imported.
       </p>
+
+      <LeadImport />
 
       {rows.length === 0 ? (
         <p className="text-gray-500 text-sm">No leads captured yet.</p>
@@ -53,7 +57,13 @@ export default async function AdminLeadsPage() {
                   </td>
                   <td className="py-3">
                     <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                      {r.source === "homepage_exit" ? "Exit intent" : "Timed popup"}
+                      {r.source === "homepage_exit"
+                        ? "Exit intent"
+                        : r.source === "email_inbox"
+                        ? "Emailed us"
+                        : r.source === "manual"
+                        ? "Added manually"
+                        : "Timed popup"}
                     </span>
                   </td>
                   <td className="py-3 text-gray-500">

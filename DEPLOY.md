@@ -5,6 +5,7 @@
 - **Domain:** givezy.in (Porkbun)
 - **Repo:** github.com/Kaizenventures/givezy
 - **Admin:** https://givezy.in/admin/login
+- **Razorpay webhook:** https://givezy.in/api/webhooks/razorpay
 - **Cost:** ~$4.60/mo
 
 ---
@@ -76,6 +77,66 @@ Add these two secrets:
 - **SSH_PRIVATE_KEY** → paste the contents of `~/.ssh/givezy-deploy` (the private key, NOT .pub)
 
 That's it. Now every `git push origin main` auto-deploys.
+
+---
+
+## Environment Variables
+
+Set these in `~/givezy/.env` on the droplet.
+
+### Required
+| Variable | Notes |
+|---|---|
+| `NEXTAUTH_SECRET` | `openssl rand -base64 32` |
+| `NEXTAUTH_URL` | `https://givezy.in` |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Seeds the admin login on first boot |
+
+### Payments (add when Razorpay access arrives)
+| Variable | Notes |
+|---|---|
+| `RAZORPAY_KEY_ID` | Also injected at build time for the checkout widget |
+| `RAZORPAY_KEY_SECRET` | Server-side only |
+| `RAZORPAY_WEBHOOK_SECRET` | Must match the secret set on the webhook in the Razorpay dashboard |
+
+**Set up the webhook** in Razorpay → Settings → Webhooks:
+- URL: `https://givezy.in/api/webhooks/razorpay`
+- Events: `payment.captured` and `payment.failed`
+- Secret: the same value as `RAZORPAY_WEBHOOK_SECRET`
+
+Without the webhook, a donor who closes the tab immediately after paying leaves a
+captured payment attached to an unpaid donation, with nothing to reconcile it.
+
+### Shipping (add when Shiprocket access arrives)
+`SHIPROCKET_EMAIL`, `SHIPROCKET_PASSWORD`, plus the `PICKUP_*` warehouse address
+used as the shipping destination.
+
+### Demo mode
+| Variable | Notes |
+|---|---|
+| `DEMO_MODE` | `true` skips checkout and records donations as paid |
+
+Demo mode requires `DEMO_MODE=true` **and** the absence of `RAZORPAY_KEY_ID`.
+Adding real keys disables it automatically, so it cannot silently give away free
+pickups. It shows a warning banner on the donate page, the thank-you page and
+throughout the admin panel. Demo payments are stored with a `demo_` payment id.
+
+### Email (optional — no-ops when unset)
+`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`,
+`ADMIN_NOTIFY_EMAIL`. When configured, a paid donation emails both the donor
+(confirmation and next steps) and the team. Mail failures are logged and never
+block a donation.
+
+For Gmail, use an [App Password](https://myaccount.google.com/apppasswords) with
+`SMTP_HOST=smtp.gmail.com` and `SMTP_PORT=587` — not the account password.
+
+---
+
+## Timezone
+
+The container runs `TZ=Asia/Kolkata` with `tzdata` installed. This matters: the
+daily/weekly/monthly pickup caps roll over at IST midnight and admin dates render
+in IST. Alpine ignores `TZ` unless `tzdata` is present, so do not remove it from
+the Dockerfile.
 
 ---
 
