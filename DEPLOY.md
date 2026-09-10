@@ -56,6 +56,12 @@ free -h
 
 ## CI/CD (Auto-Deploy on Push)
 
+> **Status: NOT WORKING.** The `DROPLET_IP` and `SSH_PRIVATE_KEY` secrets have
+> never been added, so every run fails immediately with
+> `error: missing server host`. Until step 3 below is done, pushing to `main`
+> does **not** update the server — deploy manually with the command under
+> "Manual deploy" above.
+
 Once set up, every push to `main` auto-deploys. One-time setup:
 
 ### 1. Generate an SSH key for GitHub Actions
