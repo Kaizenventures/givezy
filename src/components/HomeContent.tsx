@@ -9,7 +9,9 @@ import StorySection from "@/components/StorySection";
 import TimelineSteps from "@/components/TimelineSteps";
 import HeroIllustration from "@/components/illustrations/HeroIllustration";
 import GivingIllustration from "@/components/illustrations/GivingIllustration";
+import LeadCapture from "@/components/LeadCapture";
 import { fadeInUp, staggerContainer, scaleIn } from "@/lib/animations";
+import type { SiteContent } from "@/lib/settings";
 
 const CATEGORIES = [
   {
@@ -32,9 +34,15 @@ const CATEGORIES = [
   },
 ];
 
-export default function HomeContent() {
+export default function HomeContent({ content }: { content: SiteContent }) {
   return (
     <>
+      <LeadCapture
+        title={content.leadPopupTitle}
+        body={content.leadPopupBody}
+        delaySeconds={content.leadPopupDelaySeconds}
+      />
+
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-br from-emerald-50 via-teal-50 to-amber-50 py-20 md:py-28 px-4">
         <div className="max-w-6xl mx-auto">
@@ -49,15 +57,13 @@ export default function HomeContent() {
                 variants={fadeInUp}
                 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 leading-[1.1]"
               >
-                Every book finds a reader.{" "}
-                <span className="text-emerald-600">Every shirt finds a home.</span>
+                {content.heroTitle}
               </motion.h1>
               <motion.p
                 variants={fadeInUp}
                 className="mt-6 text-lg text-gray-600 max-w-lg leading-relaxed"
               >
-                Donate your pre-loved books and clothes in Hyderabad. We pick them up
-                from your doorstep — for free — and give them to those who need them most.
+                {content.heroSubtitle} {content.pickupLine}
               </motion.p>
               <motion.div variants={fadeInUp} className="mt-8 flex flex-col sm:flex-row gap-3">
                 <Link
@@ -99,14 +105,14 @@ export default function HomeContent() {
       </div>
 
       {/* Story Section */}
-      <StorySection />
+      <StorySection title={content.impactTitle} body={content.impactBody} />
 
       {/* Categories */}
       <section className="py-20 px-4 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-4xl mx-auto">
           <AnimatedSection className="text-center mb-12">
             <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wider mb-2">
-              Get started
+              {content.getStartedTitle}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
               What can you donate?
@@ -120,31 +126,54 @@ export default function HomeContent() {
             variants={staggerContainer}
             className="grid grid-cols-1 sm:grid-cols-2 gap-6"
           >
-            {CATEGORIES.map((cat) => (
-              <motion.div key={cat.slug} variants={scaleIn}>
-                <Link
-                  href={`/donate?category=${cat.slug}`}
-                  className={`group block border-2 border-gray-100 rounded-2xl p-8 hover:shadow-lg transition-all duration-300 ${cat.accent} hover:-translate-y-1`}
-                >
+            {CATEGORIES.map((cat) => {
+              const comingSoon = cat.slug === "clothes" && content.clothesComingSoon;
+
+              const inner = (
+                <>
                   <div className={`inline-flex items-center justify-center w-14 h-14 rounded-xl ${cat.bg} mb-5`}>
                     <cat.icon className={`w-7 h-7 ${cat.color}`} />
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">
                     {cat.name}
                   </h3>
+                  {comingSoon && (
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 text-xs font-semibold">
+                      Launching soon
+                    </span>
+                  )}
                   <p className="mt-2 text-gray-500 leading-relaxed">{cat.description}</p>
-                  <span className="inline-flex items-center gap-1 mt-4 text-sm font-semibold text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                    Donate {cat.name.toLowerCase()} <ArrowRight className="w-4 h-4" />
-                  </span>
-                </Link>
-              </motion.div>
-            ))}
+                  {!comingSoon && (
+                    <span className="inline-flex items-center gap-1 mt-4 text-sm font-semibold text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                      Donate {cat.name.toLowerCase()} <ArrowRight className="w-4 h-4" />
+                    </span>
+                  )}
+                </>
+              );
+
+              return (
+                <motion.div key={cat.slug} variants={scaleIn}>
+                  {comingSoon ? (
+                    <div className="block border-2 border-gray-100 rounded-2xl p-8 opacity-60 cursor-not-allowed">
+                      {inner}
+                    </div>
+                  ) : (
+                    <Link
+                      href={`/donate?category=${cat.slug}`}
+                      className={`group block border-2 border-gray-100 rounded-2xl p-8 hover:shadow-lg transition-all duration-300 ${cat.accent} hover:-translate-y-1`}
+                    >
+                      {inner}
+                    </Link>
+                  )}
+                </motion.div>
+              );
+            })}
           </motion.div>
         </div>
       </section>
 
       {/* Timeline Steps */}
-      <TimelineSteps />
+      <TimelineSteps steps={content.howItWorks} />
 
       {/* Final CTA */}
       <section className="py-20 px-4 bg-gradient-to-br from-emerald-600 to-teal-700 relative overflow-hidden">

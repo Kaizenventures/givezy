@@ -1,66 +1,78 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Shirt, Camera, X, Check, ArrowLeft, ArrowRight, Loader2, Package } from "lucide-react";
+import { BookOpen, Shirt, Camera, X, Plus, Loader2, Package, ArrowRight, Lock } from "lucide-react";
 
-type Step = 1 | 2 | 3;
+interface Bucket {
+  id: string;
+  label: string;
+  hint: string;
+  maxKg: number;
+  pricePaise: number;
+  priceDisplay: string;
+}
 
-const CATEGORIES = [
-  { value: "books", label: "Books", icon: BookOpen, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-400" },
-  { value: "clothes", label: "Clothes", icon: Shirt, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-400" },
-];
+interface Config {
+  buckets: Bucket[];
+  content: { clothesComingSoon: boolean; whatsappNumber: string };
+  accepting: boolean;
+  remaining: number | null;
+}
 
-const CONDITIONS = [
-  { value: "new", label: "New / Unused" },
-  { value: "gently_used", label: "Gently Used" },
-  { value: "used", label: "Used but Functional" },
-];
+declare global {
+  interface Window {
+    Razorpay: new (options: RazorpayOptions) => { open: () => void };
+  }
+}
 
-const WEIGHT_RANGES = [
-  { value: "under-1kg", label: "Under 1 kg", hint: "A few books or light clothes", grams: 750 },
-  { value: "1-3kg", label: "1–3 kg", hint: "A small bag of items", grams: 2000 },
-  { value: "3-5kg", label: "3–5 kg", hint: "A medium box", grams: 4000 },
-  { value: "5-10kg", label: "5–10 kg", hint: "A large box or suitcase", grams: 7500 },
-  { value: "above-10kg", label: "Above 10 kg", hint: "Multiple boxes", grams: 12000 },
-];
+interface RazorpayOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  prefill: { name: string; email: string; contact: string };
+  theme: { color: string };
+  handler: (r: RazorpayResponse) => void;
+  modal?: { ondismiss?: () => void };
+}
 
-const TIME_SLOTS = [
-  { value: "morning", label: "Morning (9–12)" },
-  { value: "afternoon", label: "Afternoon (12–4)" },
-  { value: "evening", label: "Evening (4–7)" },
-];
+interface RazorpayResponse {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
 
-const STEP_LABELS = ["Items", "Details", "Review"];
+const MAX_PHOTOS = 6;
 
-const stepVariants = {
-  enter: (direction: number) => ({ x: direction > 0 ? 60 : -60, opacity: 0 }),
-  center: { x: 0, opacity: 1, transition: { duration: 0.3, ease: "easeOut" as const } },
-  exit: (direction: number) => ({ x: direction > 0 ? -60 : 60, opacity: 0, transition: { duration: 0.2 } }),
-};
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window !== "undefined" && window.Razorpay) return resolve(true);
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 
 export default function DonationForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [step, setStep] = useState<Step>(1);
-  const [direction, setDirection] = useState(1);
+  const [config, setConfig] = useState<Config | null>(null);
+  const [loadingConfig, setLoadingConfig] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Step 1: Category + Item details
-  const [category, setCategory] = useState(searchParams.get("category") || "");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [condition, setCondition] = useState("");
-  const [weightRange, setWeightRange] = useState("1-3kg");
-  const [image, setImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState("");
+  const [category, setCategory] = useState("books");
+  const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([]);
+  const [bucketId, setBucketId] = useState("");
 
-  // Step 2: Contact info
   const [donorName, setDonorName] = useState("");
   const [donorPhone, setDonorPhone] = useState("");
   const [donorEmail, setDonorEmail] = useState("");
@@ -68,33 +80,57 @@ export default function DonationForm() {
   const [donorPincode, setDonorPincode] = useState("");
   const [donorCity, setDonorCity] = useState("");
   const [whatsappOptin, setWhatsappOptin] = useState(true);
-  const [preferredSlot, setPreferredSlot] = useState("");
 
-  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) {
+  // Waitlist (shown instead of payment when we're at capacity)
+  const [waitlistDone, setWaitlistDone] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/config")
+      .then((r) => r.json())
+      .then((data: Config) => {
+        setConfig(data);
+        if (data.buckets?.length) setBucketId(data.buckets[0].id);
+      })
+      .catch(() => setError("Could not load donation options. Please refresh."))
+      .finally(() => setLoadingConfig(false));
+  }, []);
+
+  useEffect(() => {
+    return () => photos.forEach((p) => URL.revokeObjectURL(p.preview));
+    // Intentionally only on unmount — individual removals revoke their own URL.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const selectedBucket = config?.buckets.find((b) => b.id === bucketId) || null;
+
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const room = MAX_PHOTOS - photos.length;
+    if (room <= 0) {
+      setError(`You can add up to ${MAX_PHOTOS} photos`);
+      return;
+    }
+    const accepted: { file: File; preview: string }[] = [];
+    for (const file of files.slice(0, room)) {
       if (file.size > 5 * 1024 * 1024) {
-        setError("Image must be under 5 MB");
-        return;
+        setError("Each photo must be under 5 MB");
+        continue;
       }
-      setImage(file);
-      setImagePreview(URL.createObjectURL(file));
+      accepted.push({ file, preview: URL.createObjectURL(file) });
+    }
+    if (accepted.length) {
+      setPhotos((prev) => [...prev, ...accepted]);
       setError("");
     }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  function validateField(name: string, value: string) {
-    const errors = { ...fieldErrors };
-    if (name === "donorPhone" && value && !/^\+?[\d\s-]{10,}$/.test(value)) {
-      errors.donorPhone = "Enter a valid 10-digit phone number";
-    } else if (name === "donorEmail" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      errors.donorEmail = "Enter a valid email address";
-    } else if (name === "donorPincode" && value && value.length !== 6) {
-      errors.donorPincode = "Pincode must be 6 digits";
-    } else {
-      delete errors[name];
-    }
-    setFieldErrors(errors);
+  function removePhoto(index: number) {
+    setPhotos((prev) => {
+      URL.revokeObjectURL(prev[index].preview);
+      return prev.filter((_, i) => i !== index);
+    });
   }
 
   function formatPhone(val: string) {
@@ -104,62 +140,125 @@ export default function DonationForm() {
     setDonorPhone(digits ? `+91 ${digits}` : "");
   }
 
-  function canProceed(): boolean {
-    const noFieldErrors = Object.keys(fieldErrors).length === 0;
-    switch (step) {
-      case 1: return !!category && !!title && !!condition && noFieldErrors;
-      case 2: return !!donorName && !!donorPhone && !!donorAddress && donorPincode.length === 6 && noFieldErrors;
-      default: return true;
-    }
-  }
+  const validate = useCallback((): boolean => {
+    const errs: Record<string, string> = {};
+    if (!donorName.trim()) errs.donorName = "Please enter your name";
+    if (donorPhone.replace(/\D/g, "").length < 10) errs.donorPhone = "Enter a valid 10-digit phone number";
+    if (donorEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(donorEmail)) errs.donorEmail = "Enter a valid email address";
+    if (!donorAddress.trim()) errs.donorAddress = "Please enter your pickup address";
+    if (donorPincode.length !== 6) errs.donorPincode = "Pincode must be 6 digits";
+    if (!bucketId) errs.bucket = "Please pick an approximate weight";
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  }, [donorName, donorPhone, donorEmail, donorAddress, donorPincode, bucketId]);
 
-  function goTo(s: Step) {
-    setDirection(s > step ? 1 : -1);
-    setStep(s);
-  }
+  const handlePay = useCallback(async () => {
+    if (!validate() || !selectedBucket) return;
 
-  // Get weight in grams for the selected range
-  function getWeightGrams(): number {
-    return WEIGHT_RANGES.find((w) => w.value === weightRange)?.grams || 2000;
-  }
-
-  async function handleSubmit() {
     setSubmitting(true);
     setError("");
 
-    const formData = new FormData();
-    formData.append("category", category);
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("condition", condition);
-    formData.append("quantity", "1");
-    formData.append("weightRange", weightRange);
-    formData.append("donorName", donorName);
-    formData.append("donorPhone", donorPhone);
-    formData.append("donorEmail", donorEmail);
-    formData.append("donorAddress", donorAddress);
-    formData.append("donorPincode", donorPincode);
-    formData.append("donorArea", donorCity);
-    formData.append("whatsappOptin", String(whatsappOptin));
-    formData.append("preferredSlot", preferredSlot);
-    if (image) formData.append("image", image);
-
     try {
+      const scriptOk = await loadRazorpayScript();
+      if (!scriptOk) throw new Error("Could not load the payment window. Check your connection and try again.");
+
+      const formData = new FormData();
+      formData.append("category", category);
+      formData.append("weightBucket", bucketId);
+      formData.append("donorName", donorName);
+      formData.append("donorPhone", donorPhone);
+      formData.append("donorEmail", donorEmail);
+      formData.append("donorAddress", donorAddress);
+      formData.append("donorPincode", donorPincode);
+      formData.append("donorArea", donorCity);
+      formData.append("whatsappOptin", String(whatsappOptin));
+      photos.forEach((p) => formData.append("photos", p.file));
+
       const res = await fetch("/api/donate", { method: "POST", body: formData });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Something went wrong");
-      }
       const data = await res.json();
-      const params = new URLSearchParams({
-        id: data.id,
-        address: donorAddress,
-        name: donorName,
-        phone: donorPhone,
-        pincode: donorPincode,
-        weight: String(getWeightGrams()),
+
+      if (res.status === 409 && data.atCapacity) {
+        setConfig((c) => (c ? { ...c, accepting: false } : c));
+        setSubmitting(false);
+        return;
+      }
+      if (!res.ok) throw new Error(data.error || "Something went wrong");
+
+      const key = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      if (!key) throw new Error("Payments are not configured. Please contact us.");
+
+      const rzp = new window.Razorpay({
+        key,
+        amount: data.amount,
+        currency: data.currency,
+        name: "Givezy",
+        description: `Pickup — ${selectedBucket.label}`,
+        order_id: data.razorpayOrderId,
+        prefill: { name: donorName, email: donorEmail, contact: donorPhone },
+        theme: { color: "#059669" },
+        modal: {
+          ondismiss: () => {
+            setSubmitting(false);
+            setError("Payment was cancelled. Your details are still here — try again when you're ready.");
+          },
+        },
+        handler: async (response: RazorpayResponse) => {
+          try {
+            const verify = await fetch("/api/shipping/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                shipmentId: data.shipmentId,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              }),
+            });
+            const vdata = await verify.json();
+            if (!verify.ok) throw new Error(vdata.error || "Payment verification failed");
+            router.push(`/donate/success?id=${data.donationId}`);
+          } catch (err) {
+            setSubmitting(false);
+            setError(
+              err instanceof Error
+                ? `${err.message}. If money was deducted, please contact us — we'll sort it out.`
+                : "Payment verification failed",
+            );
+          }
+        },
       });
-      router.push(`/donate/success?${params.toString()}`);
+
+      rzp.open();
+    } catch (err) {
+      setSubmitting(false);
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    }
+  }, [
+    validate, selectedBucket, category, bucketId, donorName, donorPhone, donorEmail,
+    donorAddress, donorPincode, donorCity, whatsappOptin, photos, router,
+  ]);
+
+  async function handleWaitlist() {
+    if (!donorName.trim() || donorPhone.replace(/\D/g, "").length < 10) {
+      setFieldErrors({
+        ...(donorName.trim() ? {} : { donorName: "Please enter your name" }),
+        ...(donorPhone.replace(/\D/g, "").length >= 10 ? {} : { donorPhone: "Enter a valid 10-digit phone number" }),
+      });
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: donorName, phone: donorPhone, email: donorEmail,
+          pincode: donorPincode, category, weightBucket: bucketId,
+        }),
+      });
+      if (!res.ok) throw new Error("Could not join the waiting list");
+      setWaitlistDone(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -167,395 +266,313 @@ export default function DonationForm() {
     }
   }
 
+  if (loadingConfig) {
+    return (
+      <div className="max-w-xl mx-auto flex items-center justify-center gap-2 text-gray-400 py-16">
+        <Loader2 className="w-4 h-4 animate-spin" />
+        Loading…
+      </div>
+    );
+  }
+
+  if (waitlistDone) {
+    return (
+      <div className="max-w-xl mx-auto text-center py-12">
+        <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4">
+          <Package className="w-7 h-7" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">You&apos;re on the list</h2>
+        <p className="text-gray-500 text-sm max-w-sm mx-auto">
+          We&apos;re at capacity for now. We&apos;ll reach out on {donorPhone} as soon as a pickup slot opens up.
+        </p>
+      </div>
+    );
+  }
+
+  const atCapacity = config && !config.accepting;
+
   return (
     <div className="max-w-xl mx-auto">
-      {/* Progress bar with labels */}
-      <div className="flex items-center gap-1 mb-8">
-        {STEP_LABELS.map((label, i) => (
-          <div key={label} className="flex-1">
-            <div className="flex items-center gap-2 mb-1.5">
-              <div
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                  i + 1 < step
-                    ? "bg-emerald-600 text-white"
-                    : i + 1 === step
-                    ? "bg-emerald-600 text-white"
-                    : "bg-gray-200 text-gray-500"
-                }`}
-              >
-                {i + 1 < step ? <Check className="w-3.5 h-3.5" /> : i + 1}
-              </div>
-              <span className={`text-xs font-medium ${i + 1 <= step ? "text-emerald-700" : "text-gray-400"}`}>
-                {label}
-              </span>
-            </div>
-            <div
-              className={`h-1 rounded-full transition-all ${
-                i + 1 <= step ? "bg-emerald-500" : "bg-gray-200"
-              }`}
-            />
-          </div>
-        ))}
-      </div>
-
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">
-          {error}
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">{error}</div>
+      )}
+
+      {atCapacity && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          <p className="font-semibold text-amber-900 text-sm">We&apos;re at capacity right now</p>
+          <p className="text-amber-700 text-sm mt-1">
+            Leave your name and number and we&apos;ll get in touch the moment a pickup slot opens up.
+          </p>
         </div>
       )}
 
-      <AnimatePresence mode="wait" custom={direction}>
-        {/* Step 1: Category + Item Details */}
-        {step === 1 && (
-          <motion.div
-            key="step1"
-            custom={direction}
-            variants={stepVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-          >
-            <h2 className="text-xl font-bold text-gray-900 mb-1">What are you donating?</h2>
-            <p className="text-gray-500 text-sm mb-6">Pick a category and tell us about the items.</p>
+      {/* Category */}
+      <h2 className="text-xl font-bold text-gray-900 mb-1">What are you donating today?</h2>
+      <p className="text-gray-500 text-sm mb-5">Books today — clothes are on the way.</p>
 
-            {/* Category */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat.value}
-                  onClick={() => setCategory(cat.value)}
-                  className={`p-5 rounded-xl border-2 text-left transition-all ${
-                    category === cat.value
-                      ? `${cat.border} ${cat.bg}`
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  <cat.icon className={`w-7 h-7 ${cat.color}`} />
-                  <p className="mt-2 font-semibold text-gray-900">{cat.label}</p>
-                </button>
-              ))}
-            </div>
+      <div className="grid grid-cols-2 gap-3 mb-8">
+        <button
+          onClick={() => setCategory("books")}
+          className={`p-5 rounded-xl border-2 text-left transition-all ${
+            category === "books" ? "border-amber-400 bg-amber-50" : "border-gray-200 hover:border-gray-300"
+          }`}
+        >
+          <BookOpen className="w-7 h-7 text-amber-600" />
+          <p className="mt-2 font-semibold text-gray-900">Books</p>
+        </button>
 
-            {/* Item fields */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Title <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Stack of 10 engineering textbooks"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Any additional details..."
-                  rows={2}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Condition <span className="text-red-400">*</span>
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {CONDITIONS.map((c) => (
-                    <button
-                      key={c.value}
-                      onClick={() => setCondition(c.value)}
-                      className={`py-2.5 px-3 rounded-xl border text-sm font-medium transition-all ${
-                        condition === c.value
-                          ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                          : "border-gray-200 text-gray-600 hover:border-gray-300"
-                      }`}
-                    >
-                      {c.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+        <button
+          disabled={config?.content.clothesComingSoon !== false}
+          onClick={() => setCategory("clothes")}
+          className={`p-5 rounded-xl border-2 text-left transition-all ${
+            config?.content.clothesComingSoon !== false
+              ? "border-gray-200 bg-gray-50 cursor-not-allowed opacity-70"
+              : category === "clothes"
+              ? "border-emerald-400 bg-emerald-50"
+              : "border-gray-200 hover:border-gray-300"
+          }`}
+        >
+          <Shirt className="w-7 h-7 text-emerald-600" />
+          <p className="mt-2 font-semibold text-gray-900">Clothes</p>
+          {config?.content.clothesComingSoon !== false && (
+            <p className="text-xs text-gray-400 mt-0.5">Launching soon</p>
+          )}
+        </button>
+      </div>
 
-              {/* Weight selector */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  <Package className="w-3.5 h-3.5 inline mr-1" />
-                  Approximate Weight <span className="text-red-400">*</span>
-                </label>
-                <p className="text-xs text-gray-400 mb-2">Pick your best estimate. The courier will weigh the package at pickup — if the actual weight is significantly different, the shipping cost may be adjusted.</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {WEIGHT_RANGES.map((w) => (
-                    <button
-                      key={w.value}
-                      onClick={() => setWeightRange(w.value)}
-                      className={`py-2.5 px-3 rounded-xl border text-left transition-all ${
-                        weightRange === w.value
-                          ? "border-emerald-500 bg-emerald-50"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      <span className={`text-sm font-medium ${weightRange === w.value ? "text-emerald-700" : "text-gray-700"}`}>
-                        {w.label}
-                      </span>
-                      <span className={`block text-xs mt-0.5 ${weightRange === w.value ? "text-emerald-500" : "text-gray-400"}`}>
-                        {w.hint}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+      {/* Photos */}
+      <h3 className="text-sm font-semibold text-gray-900 mb-1">Snap a picture</h3>
+      <p className="text-xs text-gray-400 mb-3">Helps us know what&apos;s coming. Optional, up to {MAX_PHOTOS}.</p>
 
-              {/* Photo */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                {imagePreview ? (
-                  <div className="relative h-[42px] flex items-center gap-2">
-                    <img src={imagePreview} alt="Preview" className="w-10 h-10 object-cover rounded-lg" />
-                    <span className="text-sm text-gray-600 truncate flex-1">{image?.name}</span>
-                    <button
-                      onClick={() => { setImage(null); setImagePreview(""); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-                      className="p-1 text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-sm hover:border-emerald-400 hover:text-emerald-600 transition-colors inline-flex items-center justify-center gap-2"
-                  >
-                    <Camera className="w-4 h-4" />
-                    Add photo (optional)
-                  </button>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handlePhotoChange}
+        className="hidden"
+      />
 
-        {/* Step 2: Contact Info */}
-        {step === 2 && (
-          <motion.div
-            key="step2"
-            custom={direction}
-            variants={stepVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-          >
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Your details</h2>
-            <p className="text-gray-500 text-sm mb-6">For coordinating the courier pickup. Your info stays private.</p>
+      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-8">
+        <AnimatePresence initial={false}>
+          {photos.map((p, i) => (
+            <motion.div
+              key={p.preview}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="relative aspect-square rounded-xl overflow-hidden border border-gray-200"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={p.preview} alt={`Donation photo ${i + 1}`} className="w-full h-full object-cover" />
+              <button
+                onClick={() => removePhoto(i)}
+                aria-label={`Remove photo ${i + 1}`}
+                className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white hover:bg-black/80"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={donorName}
-                  onChange={(e) => setDonorName(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="tel"
-                  value={donorPhone}
-                  onChange={(e) => formatPhone(e.target.value)}
-                  onBlur={() => validateField("donorPhone", donorPhone)}
-                  placeholder="+91 9876543210"
-                  className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-colors ${
-                    fieldErrors.donorPhone ? "border-red-300 focus:border-red-500 focus:ring-red-200" : "border-gray-300 focus:border-emerald-500"
-                  }`}
-                />
-                {fieldErrors.donorPhone && <p className="text-xs text-red-500 mt-1">{fieldErrors.donorPhone}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={donorEmail}
-                  onChange={(e) => setDonorEmail(e.target.value)}
-                  onBlur={() => validateField("donorEmail", donorEmail)}
-                  className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-colors ${
-                    fieldErrors.donorEmail ? "border-red-300 focus:border-red-500 focus:ring-red-200" : "border-gray-300 focus:border-emerald-500"
-                  }`}
-                />
-                {fieldErrors.donorEmail && <p className="text-xs text-red-500 mt-1">{fieldErrors.donorEmail}</p>}
-              </div>
-
-              {/* Address — simple fields, no autocomplete */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Pickup Address <span className="text-red-400">*</span>
-                </label>
-                <textarea
-                  value={donorAddress}
-                  onChange={(e) => setDonorAddress(e.target.value)}
-                  placeholder="Flat/House no., Building, Street, Landmark"
-                  rows={2}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none transition-colors"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Pincode <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={donorPincode}
-                    onChange={(e) => setDonorPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    onBlur={() => validateField("donorPincode", donorPincode)}
-                    placeholder="500001"
-                    maxLength={6}
-                    className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-colors ${
-                      fieldErrors.donorPincode ? "border-red-300 focus:border-red-500 focus:ring-red-200" : "border-gray-300 focus:border-emerald-500"
-                    }`}
-                  />
-                  {fieldErrors.donorPincode && <p className="text-xs text-red-500 mt-1">{fieldErrors.donorPincode}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                  <input
-                    type="text"
-                    value={donorCity}
-                    onChange={(e) => setDonorCity(e.target.value)}
-                    placeholder="Hyderabad"
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Pickup Time</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {TIME_SLOTS.map((slot) => (
-                    <button
-                      key={slot.value}
-                      onClick={() => setPreferredSlot(slot.value)}
-                      className={`py-2.5 px-3 rounded-xl border text-xs font-medium transition-all ${
-                        preferredSlot === slot.value
-                          ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                          : "border-gray-200 text-gray-600 hover:border-gray-300"
-                      }`}
-                    >
-                      {slot.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={whatsappOptin}
-                  onChange={(e) => setWhatsappOptin(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-                />
-                <span className="text-sm text-gray-600">Send me pickup updates on WhatsApp</span>
-              </label>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Step 3: Review */}
-        {step === 3 && (
-          <motion.div
-            key="step3"
-            custom={direction}
-            variants={stepVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-          >
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Review your donation</h2>
-            <p className="text-gray-500 text-sm mb-6">Make sure everything looks good before submitting.</p>
-
-            <div className="space-y-4">
-              <div className="bg-gray-50 rounded-xl p-5 space-y-2 text-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-bold text-gray-900">Item Details</h3>
-                  <button onClick={() => goTo(1)} className="text-emerald-600 text-xs font-medium hover:underline">Edit</button>
-                </div>
-                <p><span className="text-gray-400">Category:</span> <span className="text-gray-900 capitalize">{category}</span></p>
-                <p><span className="text-gray-400">Title:</span> <span className="text-gray-900">{title}</span></p>
-                {description && <p><span className="text-gray-400">Description:</span> <span className="text-gray-900">{description}</span></p>}
-                <p><span className="text-gray-400">Condition:</span> <span className="text-gray-900">{condition.replace("_", " ")}</span></p>
-                <p><span className="text-gray-400">Weight:</span> <span className="text-gray-900">{WEIGHT_RANGES.find((w) => w.value === weightRange)?.label || weightRange}</span></p>
-                {imagePreview && <img src={imagePreview} alt="Donation" className="w-24 h-24 object-cover rounded-lg mt-2" />}
-              </div>
-
-              <div className="bg-gray-50 rounded-xl p-5 space-y-2 text-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-bold text-gray-900">Pickup Details</h3>
-                  <button onClick={() => goTo(2)} className="text-emerald-600 text-xs font-medium hover:underline">Edit</button>
-                </div>
-                <p><span className="text-gray-400">Name:</span> <span className="text-gray-900">{donorName}</span></p>
-                <p><span className="text-gray-400">Phone:</span> <span className="text-gray-900">{donorPhone}</span></p>
-                {donorEmail && <p><span className="text-gray-400">Email:</span> <span className="text-gray-900">{donorEmail}</span></p>}
-                <p><span className="text-gray-400">Address:</span> <span className="text-gray-900">{donorAddress}</span></p>
-                <p><span className="text-gray-400">Pincode:</span> <span className="text-gray-900">{donorPincode}</span></p>
-                {donorCity && <p><span className="text-gray-400">City:</span> <span className="text-gray-900">{donorCity}</span></p>}
-                {preferredSlot && <p><span className="text-gray-400">Preferred time:</span> <span className="text-gray-900 capitalize">{preferredSlot}</span></p>}
-                <p><span className="text-gray-400">WhatsApp updates:</span> <span className="text-gray-900">{whatsappOptin ? "Yes" : "No"}</span></p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Navigation */}
-      <div className="flex justify-between mt-8">
-        {step > 1 ? (
+        {photos.length < MAX_PHOTOS && (
           <button
-            onClick={() => goTo((step - 1) as Step)}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
+            onClick={() => fileInputRef.current?.click()}
+            className="aspect-square rounded-xl border-2 border-dashed border-gray-300 text-gray-400 hover:border-emerald-400 hover:text-emerald-600 transition-colors flex flex-col items-center justify-center gap-1"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Back
+            {photos.length === 0 ? <Camera className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+            <span className="text-[11px] font-medium">{photos.length === 0 ? "Add photo" : "Add more"}</span>
           </button>
-        ) : (
-          <div />
         )}
+      </div>
 
-        {step < 3 ? (
+      {/* Weight bucket */}
+      <h3 className="text-sm font-semibold text-gray-900 mb-1">
+        <Package className="w-3.5 h-3.5 inline mr-1" />
+        Approximate weight of the above books
+      </h3>
+      <p className="text-xs text-gray-400 mb-3">
+        Pick your best estimate. The courier weighs the package at pickup — if it&apos;s well over what you
+        selected, we may need to adjust the charge.
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+        {config?.buckets.map((b) => (
           <button
-            onClick={() => goTo((step + 1) as Step)}
-            disabled={!canProceed()}
-            className="inline-flex items-center gap-1.5 px-6 py-2.5 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:shadow-emerald-200"
+            key={b.id}
+            onClick={() => setBucketId(b.id)}
+            className={`py-3 px-3 rounded-xl border text-left transition-all ${
+              bucketId === b.id ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-gray-300"
+            }`}
           >
-            Continue
-            <ArrowRight className="w-4 h-4" />
+            <span className={`block text-sm font-semibold ${bucketId === b.id ? "text-emerald-700" : "text-gray-800"}`}>
+              {b.label}
+            </span>
+            <span className={`block text-xs mt-0.5 ${bucketId === b.id ? "text-emerald-600" : "text-gray-400"}`}>
+              {b.hint}
+            </span>
+            <span className={`block text-sm font-bold mt-1.5 ${bucketId === b.id ? "text-emerald-700" : "text-gray-600"}`}>
+              {b.priceDisplay}
+            </span>
           </button>
-        ) : (
+        ))}
+      </div>
+      {fieldErrors.bucket && <p className="text-xs text-red-500 mb-2">{fieldErrors.bucket}</p>}
+
+      {/* Payable amount */}
+      {selectedBucket && !atCapacity && (
+        <div className="flex items-center justify-between bg-gray-900 text-white rounded-xl px-5 py-4 my-6">
+          <div>
+            <p className="text-xs text-gray-400">Payable amount</p>
+            <p className="text-xs text-gray-500 mt-0.5">Covers doorstep pickup, up to {selectedBucket.maxKg} kg</p>
+          </div>
+          <p className="text-2xl font-bold">{selectedBucket.priceDisplay}</p>
+        </div>
+      )}
+
+      {/* Details */}
+      <h3 className="text-sm font-semibold text-gray-900 mt-8 mb-4">Your details</h3>
+
+      <div className="space-y-4">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Name" required error={fieldErrors.donorName}>
+            <input
+              type="text"
+              value={donorName}
+              onChange={(e) => setDonorName(e.target.value)}
+              className={inputClass(!!fieldErrors.donorName)}
+            />
+          </Field>
+          <Field label="Mobile" required error={fieldErrors.donorPhone}>
+            <input
+              type="tel"
+              value={donorPhone}
+              onChange={(e) => formatPhone(e.target.value)}
+              placeholder="+91 9876543210"
+              className={inputClass(!!fieldErrors.donorPhone)}
+            />
+          </Field>
+        </div>
+
+        <Field label="Email" error={fieldErrors.donorEmail}>
+          <input
+            type="email"
+            value={donorEmail}
+            onChange={(e) => setDonorEmail(e.target.value)}
+            className={inputClass(!!fieldErrors.donorEmail)}
+          />
+        </Field>
+
+        <Field label="Pickup address" required error={fieldErrors.donorAddress}>
+          <textarea
+            value={donorAddress}
+            onChange={(e) => setDonorAddress(e.target.value)}
+            placeholder="Flat/House no., Building, Street, Landmark"
+            rows={2}
+            className={`${inputClass(!!fieldErrors.donorAddress)} resize-none`}
+          />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Pincode" required error={fieldErrors.donorPincode}>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={donorPincode}
+              onChange={(e) => setDonorPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="500001"
+              maxLength={6}
+              className={inputClass(!!fieldErrors.donorPincode)}
+            />
+          </Field>
+          <Field label="City">
+            <input
+              type="text"
+              value={donorCity}
+              onChange={(e) => setDonorCity(e.target.value)}
+              placeholder="Hyderabad"
+              className={inputClass(false)}
+            />
+          </Field>
+        </div>
+
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={whatsappOptin}
+            onChange={(e) => setWhatsappOptin(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+          />
+          <span className="text-sm text-gray-600">Send me pickup updates on WhatsApp</span>
+        </label>
+      </div>
+
+      {/* Action */}
+      {atCapacity ? (
+        <button
+          onClick={handleWaitlist}
+          disabled={submitting}
+          className="w-full mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-amber-600 rounded-xl hover:bg-amber-700 transition-all disabled:opacity-50"
+        >
+          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+          Join the waiting list
+        </button>
+      ) : (
+        <>
           <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 hover:shadow-md hover:shadow-emerald-200"
+            onClick={handlePay}
+            disabled={submitting || !selectedBucket}
+            className="w-full mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:shadow-emerald-200"
           >
             {submitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Submitting...
+                Opening payment…
               </>
             ) : (
               <>
-                Submit Donation
-                <Check className="w-4 h-4" />
+                Pay {selectedBucket?.priceDisplay ?? ""} now
+                <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
-        )}
-      </div>
+          <p className="mt-3 text-center text-xs text-gray-400 inline-flex items-center justify-center gap-1 w-full">
+            <Lock className="w-3 h-3" />
+            Secure payment via Razorpay
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+function inputClass(hasError: boolean) {
+  return `w-full px-3 py-2.5 border rounded-xl text-sm outline-none transition-colors focus:ring-2 ${
+    hasError
+      ? "border-red-300 focus:border-red-500 focus:ring-red-200"
+      : "border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
+  }`;
+}
+
+function Field({
+  label,
+  required,
+  error,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label} {required && <span className="text-red-400">*</span>}
+      </label>
+      {children}
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
     </div>
   );
 }

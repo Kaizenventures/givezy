@@ -5,7 +5,7 @@ import { buildMetadata } from "@/lib/seo";
 export const metadata = buildMetadata({
   title: "Donate",
   description:
-    "Donate books and clothes in Hyderabad. Fill a quick form and we'll pick them up from your doorstep for free.",
+    "Donate books and clothes in Hyderabad. Fill a quick form, pick a bag size, and we'll collect from your doorstep.",
 });
 
 export default function DonatePage() {

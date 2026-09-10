@@ -7,6 +7,10 @@ import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { AdminShell } from "../../layout";
 import DonationStatusUpdate from "@/components/DonationStatusUpdate";
+import FulfilPickupButton from "@/components/FulfilPickupButton";
+import { getBuckets, findBucket } from "@/lib/settings";
+
+export const dynamic = "force-dynamic";
 
 export default async function DonationDetailPage({
   params,
@@ -33,6 +37,23 @@ export default async function DonationDetailPage({
 
   const shipment = donationShipments.length > 0 ? donationShipments[0] : null;
 
+  const bucket = findBucket(await getBuckets(), donation.weightBucket);
+
+  let photos: string[] = [];
+  try {
+    const parsed = JSON.parse(donation.photos);
+    if (Array.isArray(parsed)) photos = parsed.filter((u): u is string => typeof u === "string");
+  } catch {
+    // pre-v2 rows stored a single imageUrl instead
+  }
+  if (photos.length === 0 && donation.imageUrl) photos = [donation.imageUrl];
+
+  const fulfilBlockedReason =
+    !shipment ? "No payment record for this donation."
+    : shipment.paymentStatus !== "paid" ? "Book the pickup once payment has cleared."
+    : shipment.shiprocketOrderId ? "A Shiprocket pickup already exists."
+    : null;
+
   return (
     <AdminShell>
       <div className="mb-4">
@@ -45,9 +66,13 @@ export default async function DonationDetailPage({
         {/* Main info */}
         <div className="lg:col-span-2 space-y-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{donation.title}</h1>
-            <p className="text-gray-500 text-sm mt-1">
-              {donation.category} &middot; {donation.condition.replace("_", " ")} &middot; Qty: {donation.quantity}
+            <h1 className="text-2xl font-bold text-gray-900">
+              {donation.title || `${bucket?.label ?? donation.weightBucket} of ${donation.category}`}
+            </h1>
+            <p className="text-gray-500 text-sm mt-1 capitalize">
+              {donation.category}
+              {bucket ? ` · ${bucket.label} (up to ${bucket.maxKg} kg)` : ` · ${donation.weightBucket}`}
+              {donation.condition ? ` · ${donation.condition.replace("_", " ")}` : ""}
             </p>
           </div>
 
@@ -58,14 +83,23 @@ export default async function DonationDetailPage({
             </div>
           )}
 
-          {donation.imageUrl && (
+          {photos.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Photo</h3>
-              <img
-                src={donation.imageUrl}
-                alt={donation.title}
-                className="w-full max-w-md rounded-lg object-cover"
-              />
+              <h3 className="text-sm font-medium text-gray-500 mb-2">
+                {photos.length === 1 ? "Photo" : `Photos (${photos.length})`}
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-md">
+                {photos.map((url, i) => (
+                  <a key={url} href={url} target="_blank" rel="noopener noreferrer">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt={`Donation photo ${i + 1}`}
+                      className="w-full aspect-square rounded-lg object-cover border border-gray-200 hover:opacity-90 transition-opacity"
+                    />
+                  </a>
+                ))}
+              </div>
             </div>
           )}
 
@@ -114,13 +148,27 @@ export default async function DonationDetailPage({
               {/* Pricing breakdown */}
               <div className="bg-gray-50 rounded p-3 mb-4 space-y-1 text-sm">
                 <div className="flex justify-between text-gray-600">
-                  <span>Shipping Cost</span>
+                  <span>Pickup charge</span>
                   <span>₹{(shipment.shippingCost / 100).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Service Charge (5%)</span>
-                  <span>₹{(shipment.serviceFee / 100).toFixed(2)}</span>
-                </div>
+                {shipment.serviceFee > 0 && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>Service charge</span>
+                    <span>₹{(shipment.serviceFee / 100).toFixed(2)}</span>
+                  </div>
+                )}
+                {shipment.estimatedCourierCost !== null && (
+                  <div className="flex justify-between text-gray-500">
+                    <span>Courier quoted</span>
+                    <span
+                      className={
+                        shipment.estimatedCourierCost > shipment.totalAmount ? "text-red-600 font-medium" : ""
+                      }
+                    >
+                      ₹{(shipment.estimatedCourierCost / 100).toFixed(2)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between font-semibold text-gray-900 border-t pt-1">
                   <span>Total Paid</span>
                   <span>₹{(shipment.totalAmount / 100).toFixed(2)}</span>
@@ -225,6 +273,7 @@ export default async function DonationDetailPage({
           <div className="bg-gray-50 rounded-lg p-5">
             <h3 className="font-semibold text-gray-900 mb-3">Quick Actions</h3>
             <div className="space-y-2">
+              <FulfilPickupButton donationId={donation.id} disabledReason={fulfilBlockedReason} />
               <a
                 href={`tel:${donation.donorPhone}`}
                 className="block w-full text-center py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"

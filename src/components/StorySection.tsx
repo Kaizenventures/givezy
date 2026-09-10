@@ -4,7 +4,7 @@ import AnimatedSection from "./AnimatedSection";
 import { slideInLeft, slideInRight } from "@/lib/animations";
 import StoryIllustration from "./illustrations/StoryIllustration";
 
-export default function StorySection() {
+export default function StorySection({ title, body }: { title: string; body: string }) {
   return (
     <section className="py-20 px-4 overflow-hidden">
       <div className="max-w-5xl mx-auto">
@@ -22,21 +22,16 @@ export default function StorySection() {
               Your impact
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">
-              That textbook gathering dust on your shelf?
+              {title}
             </h2>
             <div className="space-y-4 text-gray-600 leading-relaxed">
-              <p>
-                It could be the reason a child in Old City learns to read this year. In Hyderabad alone,
-                thousands of families can't afford school supplies — but they have the hunger to learn.
-              </p>
-              <p>
-                The shirt you haven't worn in two years? It could keep someone warm through a Deccan winter night.
-                India generates nearly 8 million tonnes of textile waste every year, while millions go without
-                basic clothing.
-              </p>
-              <p className="font-medium text-gray-800">
-                Your clutter is someone's comfort. Your old is someone's new beginning.
-              </p>
+              {body
+                .split(/\n{2,}/)
+                .map((para) => para.trim())
+                .filter(Boolean)
+                .map((para, i) => (
+                  <p key={i}>{para}</p>
+                ))}
             </div>
           </AnimatedSection>
         </div>

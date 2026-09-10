@@ -6,6 +6,9 @@ import { donations } from "@/lib/schema";
 import { desc } from "drizzle-orm";
 import Link from "next/link";
 import { AdminShell } from "../layout";
+import { ACTIVE_STATUSES, statusLabel, statusColor } from "@/lib/donation-status";
+
+export const dynamic = "force-dynamic";
 
 export default async function DonationsListPage({
   searchParams,
@@ -39,15 +42,15 @@ export default async function DonationsListPage({
         >
           All
         </Link>
-        {["pending", "contacted", "scheduled", "picked_up", "cancelled"].map((s) => (
+        {ACTIVE_STATUSES.map((s) => (
           <Link
-            key={s}
-            href={`/admin/donations?status=${s}`}
-            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors capitalize ${
-              params.status === s ? "bg-gray-900 text-white border-gray-900" : "border-gray-300 text-gray-600 hover:border-gray-400"
+            key={s.value}
+            href={`/admin/donations?status=${s.value}`}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+              params.status === s.value ? "bg-gray-900 text-white border-gray-900" : "border-gray-300 text-gray-600 hover:border-gray-400"
             }`}
           >
-            {s.replace("_", " ")}
+            {s.label}
           </Link>
         ))}
         <span className="text-gray-300">|</span>
@@ -86,7 +89,7 @@ export default async function DonationsListPage({
                 <tr key={d.id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-3">
                     <Link href={`/admin/donations/${d.id}`} className="text-emerald-600 hover:underline font-medium">
-                      {d.title}
+                      {d.title || `${d.weightBucket} of ${d.category}`}
                     </Link>
                   </td>
                   <td className="py-3 capitalize">{d.category}</td>
@@ -96,14 +99,8 @@ export default async function DonationsListPage({
                   </td>
                   <td className="py-3 text-gray-500">{d.donorArea || "—"}</td>
                   <td className="py-3">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                      d.status === "pending" ? "bg-yellow-100 text-yellow-700" :
-                      d.status === "contacted" ? "bg-blue-100 text-blue-700" :
-                      d.status === "scheduled" ? "bg-purple-100 text-purple-700" :
-                      d.status === "picked_up" ? "bg-emerald-100 text-emerald-700" :
-                      "bg-gray-100 text-gray-600"
-                    }`}>
-                      {d.status.replace("_", " ")}
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusColor(d.status)}`}>
+                      {statusLabel(d.status)}
                     </span>
                   </td>
                   <td className="py-3">{d.whatsappOptin ? "Yes" : "No"}</td>

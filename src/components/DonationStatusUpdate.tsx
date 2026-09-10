@@ -3,13 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const STATUSES = [
-  { value: "pending", label: "Pending", color: "bg-yellow-100 text-yellow-700" },
-  { value: "contacted", label: "Contacted", color: "bg-blue-100 text-blue-700" },
-  { value: "scheduled", label: "Scheduled", color: "bg-purple-100 text-purple-700" },
-  { value: "picked_up", label: "Picked Up", color: "bg-emerald-100 text-emerald-700" },
-  { value: "cancelled", label: "Cancelled", color: "bg-gray-100 text-gray-600" },
-];
+import { ACTIVE_STATUSES } from "@/lib/donation-status";
 
 export default function DonationStatusUpdate({
   donationId,
@@ -61,7 +55,7 @@ export default function DonationStatusUpdate({
       <h3 className="font-semibold text-gray-900">Update Status</h3>
 
       <div className="flex flex-wrap gap-2">
-        {STATUSES.map((s) => (
+        {ACTIVE_STATUSES.map((s) => (
           <button
             key={s.value}
             onClick={() => setStatus(s.value)}

@@ -8,6 +8,13 @@
       "when": 1772590627093,
       "tag": "0000_damp_pride",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789061654603,
+      "tag": "0001_bouncy_gorilla_man",
+      "breakpoints": true
     }
   ]
 }

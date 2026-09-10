@@ -1,304 +1,128 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { CheckCircle2, Package, MessageCircle, Truck, Loader2 } from "lucide-react";
 
-interface ShippingEstimate {
-  shippingCost: number; // paise
-  serviceFee: number;
-  total: number;
-  courierName: string | null;
-  estimatedDays: number | null;
-  display: {
-    shippingCost: string;
-    serviceFee: string;
-    total: string;
-  };
+interface NextStep {
+  nextStepTitle: string;
+  nextStepBody: string;
+  whatsappNumber: string;
 }
 
-interface PaymentOrder {
-  shipmentId: string;
-  razorpayOrderId: string;
-  amount: number;
-  breakdown: {
-    shippingCost: number;
-    serviceFee: number;
-    total: number;
-  };
-  donor: {
-    name: string;
-    email: string;
-    phone: string;
-  };
-}
+export default function SuccessContent({
+  donationId,
+  maxKg,
+  bucketLabel,
+}: {
+  donationId: string | null;
+  maxKg: number | null;
+  bucketLabel: string | null;
+}) {
+  const [content, setContent] = useState<NextStep | null>(null);
+  const [loading, setLoading] = useState(true);
 
-declare global {
-  interface Window {
-    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
-  }
-}
-
-interface RazorpayOptions {
-  key: string;
-  amount: number;
-  currency: string;
-  name: string;
-  description: string;
-  order_id: string;
-  prefill: { name: string; email: string; contact: string };
-  theme: { color: string };
-  handler: (response: RazorpayResponse) => void;
-  modal?: { ondismiss?: () => void };
-}
-
-interface RazorpayInstance {
-  open: () => void;
-}
-
-interface RazorpayResponse {
-  razorpay_order_id: string;
-  razorpay_payment_id: string;
-  razorpay_signature: string;
-}
-
-export default function SuccessContent() {
-  const searchParams = useSearchParams();
-  const donationId = searchParams.get("id") || "";
-  const name = searchParams.get("name") || "";
-  const phone = searchParams.get("phone") || "";
-  const pincode = searchParams.get("pincode") || "";
-  const weightGrams = parseInt(searchParams.get("weight") || "2000");
-
-  const [estimate, setEstimate] = useState<ShippingEstimate | null>(null);
-  const [loadingEstimate, setLoadingEstimate] = useState(false);
-  const [estimateError, setEstimateError] = useState<string | null>(null);
-  const [paymentLoading, setPaymentLoading] = useState(false);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [paymentError, setPaymentError] = useState<string | null>(null);
-
-  // Load Razorpay script
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
+    fetch("/api/config")
+      .then((r) => r.json())
+      .then((d) => setContent(d.content))
+      .catch(() => setContent(null))
+      .finally(() => setLoading(false));
   }, []);
 
-  // Auto-fetch shipping estimate on page load
-  useEffect(() => {
-    if (pincode && !estimate && !loadingEstimate) {
-      setLoadingEstimate(true);
-      setEstimateError(null);
-      fetch("/api/shipping/estimate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pincode, weightGrams }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.error) {
-            setEstimateError(data.error);
-          } else {
-            setEstimate(data);
-          }
-        })
-        .catch(() => setEstimateError("Could not get shipping estimate"))
-        .finally(() => setLoadingEstimate(false));
-    }
-  }, [pincode, estimate, loadingEstimate]);
-
-  // Handle Razorpay payment
-  const handlePayForShipping = useCallback(async () => {
-    if (!donationId) return;
-
-    setPaymentLoading(true);
-    setPaymentError(null);
-
-    try {
-      // Step 1: Create shipment + Razorpay order
-      const payRes = await fetch("/api/shipping/pay", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ donationId, weightGrams }),
-      });
-      const payData: PaymentOrder & { error?: string } = await payRes.json();
-
-      if (!payRes.ok || payData.error) {
-        throw new Error(payData.error || "Failed to create payment");
-      }
-
-      // Step 2: Open Razorpay modal
-      const options: RazorpayOptions = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
-        amount: payData.amount,
-        currency: "INR",
-        name: "Givezy",
-        description: "Donation Shipping",
-        order_id: payData.razorpayOrderId,
-        prefill: {
-          name: payData.donor.name || name,
-          email: payData.donor.email || "",
-          contact: payData.donor.phone || phone,
-        },
-        theme: { color: "#059669" },
-        handler: async (response: RazorpayResponse) => {
-          // Step 3: Verify payment
-          try {
-            const verifyRes = await fetch("/api/shipping/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                shipmentId: payData.shipmentId,
-                razorpayOrderId: response.razorpay_order_id,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpaySignature: response.razorpay_signature,
-              }),
-            });
-            const verifyData = await verifyRes.json();
-
-            if (verifyData.success) {
-              setPaymentSuccess(true);
-            } else {
-              setPaymentError("Payment verification failed. Contact support.");
-            }
-          } catch {
-            setPaymentError("Payment may have succeeded but verification failed. Contact support.");
-          }
-          setPaymentLoading(false);
-        },
-        modal: {
-          ondismiss: () => {
-            setPaymentLoading(false);
-          },
-        },
-      };
-
-      if (typeof window.Razorpay === "undefined") {
-        throw new Error("Payment system is loading. Please try again.");
-      }
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    } catch (err) {
-      setPaymentError(err instanceof Error ? err.message : "Payment failed");
-      setPaymentLoading(false);
-    }
-  }, [donationId, name, phone]);
-
-  // Success state — payment done
-  if (paymentSuccess) {
-    return (
-      <div className="max-w-lg mx-auto px-4 py-16 text-center">
-        <div className="text-5xl mb-4" aria-hidden="true">🚚</div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-3">Shipping Confirmed!</h1>
-        <p className="text-gray-500 mb-6">
-          Payment received. A courier will be assigned to pick up your donation.
-          You&apos;ll receive tracking details shortly.
-        </p>
-        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-emerald-700">
-            Thank you for donating and covering the shipping! Your items will reach us
-            and be put to good use.
-          </p>
-        </div>
-        <Link
-          href="/"
-          className="inline-block bg-emerald-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors"
-        >
-          Back to Home
-        </Link>
-      </div>
-    );
-  }
+  const waNumber = content?.whatsappNumber?.replace(/[^\d]/g, "") || "";
+  const waMessage = encodeURIComponent(
+    donationId
+      ? `Hi Givezy! My de-clutter bag is packed and ready for pickup. Donation ref: ${donationId.slice(0, 8)}`
+      : "Hi Givezy! My de-clutter bag is packed and ready for pickup.",
+  );
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-16">
-      <div className="text-center mb-8">
-        <div className="text-5xl mb-4" aria-hidden="true">🎉</div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-3">Thank you for your donation!</h1>
-        <p className="text-gray-500">
-          One last step — pay for shipping and a courier will pick up from your address.
+    <div className="max-w-xl mx-auto px-4 py-12">
+      <div className="text-center mb-10">
+        <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4">
+          <CheckCircle2 className="w-8 h-8" />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900">Payment received</h1>
+        <p className="text-gray-500 text-sm mt-1">
+          Thank you — your pickup is booked.
+          {donationId && (
+            <>
+              {" "}Your reference is{" "}
+              <span className="font-mono font-medium text-gray-700">{donationId.slice(0, 8).toUpperCase()}</span>.
+            </>
+          )}
         </p>
       </div>
 
-      {/* Shipping payment card */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-8 shadow-sm">
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-2xl" aria-hidden="true">📦</span>
-          <h3 className="font-semibold text-gray-900">Courier Pickup</h3>
-        </div>
+      {/* The Next Step */}
+      <div className="border-2 border-gray-900 rounded-2xl p-6 mb-6">
+        <h2 className="text-lg font-bold text-gray-900 text-center mb-5">
+          {loading ? "The Next Step" : content?.nextStepTitle || "The Next Step"}
+        </h2>
 
-        {loadingEstimate && (
-          <div className="flex items-center gap-2 text-sm text-gray-500 py-4">
-            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            Calculating shipping cost...
-          </div>
-        )}
-
-        {estimateError && (
-          <div className="text-sm text-red-600 py-4">
-            {estimateError}. Please try again or contact us for help.
-          </div>
-        )}
-
-        {estimate && (
-          <>
-            {/* Price breakdown */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-4 space-y-2">
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>Shipping ({estimate.courierName || "Courier"})</span>
-                <span>{estimate.display.shippingCost}</span>
-              </div>
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>Service Charge (5%)</span>
-                <span>{estimate.display.serviceFee}</span>
-              </div>
-              <div className="border-t pt-2 flex justify-between font-semibold text-gray-900">
-                <span>Total</span>
-                <span>{estimate.display.total}</span>
-              </div>
-              {estimate.estimatedDays && (
-                <p className="text-xs text-gray-400 pt-1">
-                  Estimated delivery: {estimate.estimatedDays} day{estimate.estimatedDays > 1 ? "s" : ""}
-                </p>
-              )}
-            </div>
-
-            {/* Pay button */}
-            <button
-              onClick={handlePayForShipping}
-              disabled={paymentLoading}
-              className="w-full bg-emerald-600 text-white px-5 py-3 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {paymentLoading ? "Processing..." : `Pay ${estimate.display.total} & Schedule Pickup`}
-            </button>
-
-            {paymentError && (
-              <p className="text-sm text-red-600 mt-2">{paymentError}</p>
-            )}
-
-            <p className="text-xs text-gray-400 mt-3 text-center">
-              Secure payment powered by Razorpay
-            </p>
-          </>
-        )}
+        <ol className="space-y-5">
+          <Step icon={Package} n={1}>
+            You will now receive a <strong>de-clutter bag</strong> from Givezy.
+          </Step>
+          <Step icon={Truck} n={2}>
+            Once you receive it, you are allowed to pack it up to{" "}
+            <strong>{maxKg ? `${maxKg} kgs` : "the weight you selected"}</strong>
+            {bucketLabel ? ` (${bucketLabel})` : ""}.
+          </Step>
+          <Step icon={MessageCircle} n={3}>
+            Once done, please ping us on WhatsApp and we&apos;ll arrange the pickup.
+          </Step>
+        </ol>
       </div>
 
-      <div className="text-center">
-        <Link
-          href="/"
-          className="inline-block text-gray-500 hover:text-gray-700 text-sm font-medium transition-colors"
+      {loading ? (
+        <div className="flex justify-center text-gray-400">
+          <Loader2 className="w-4 h-4 animate-spin" />
+        </div>
+      ) : waNumber ? (
+        <a
+          href={`https://wa.me/${waNumber}?text=${waMessage}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all"
         >
-          &larr; Back to Home
+          <MessageCircle className="w-4 h-4" />
+          Ping us on WhatsApp when packed
+        </a>
+      ) : (
+        <p className="text-center text-sm text-gray-500">
+          We&apos;ll be in touch shortly with WhatsApp details for the pickup.
+        </p>
+      )}
+
+      <div className="text-center mt-8">
+        <Link href="/" className="text-sm text-gray-500 hover:text-gray-900 hover:underline">
+          Back to home
         </Link>
       </div>
     </div>
+  );
+}
+
+function Step({
+  icon: Icon,
+  n,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  n: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <li className="flex gap-4">
+      <div className="shrink-0 w-9 h-9 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center">
+        <Icon className="w-4 h-4" />
+      </div>
+      <div className="pt-1.5">
+        <span className="text-xs font-bold text-gray-400 mr-1.5">{n}.</span>
+        <span className="text-sm text-gray-700 leading-relaxed">{children}</span>
+      </div>
+    </li>
   );
 }

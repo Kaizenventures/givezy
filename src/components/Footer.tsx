@@ -12,7 +12,7 @@ export default function Footer() {
           <div>
             <h3 className="font-bold text-emerald-600 text-xl mb-3">Givezy</h3>
             <p className="text-gray-500 text-sm leading-relaxed">
-              Donate books and clothes in Hyderabad with free doorstep pickup.
+              Donate books and clothes in Hyderabad with doorstep pickup.
               Give your pre-loved items a second life.
             </p>
           </div>

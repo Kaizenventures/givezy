@@ -1,6 +1,3 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import AdminSignOut from "@/components/AdminSignOut";
 
@@ -27,13 +24,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <Link href="/admin/donations" className="text-gray-300 hover:text-white text-sm">
               Donations
             </Link>
+            <Link href="/admin/waitlist" className="text-gray-300 hover:text-white text-sm">
+              Waitlist
+            </Link>
+            <Link href="/admin/leads" className="text-gray-300 hover:text-white text-sm">
+              Leads
+            </Link>
+            <Link href="/admin/settings" className="text-gray-300 hover:text-white text-sm">
+              Settings
+            </Link>
           </div>
           <div className="flex items-center gap-4">
-            <a
-              href="/api/admin/export"
-              className="text-gray-300 hover:text-white text-sm"
-            >
-              Export CSV
+            <a href="/api/admin/export" className="text-gray-300 hover:text-white text-sm">
+              Export
             </a>
             <AdminSignOut />
           </div>

@@ -3,12 +3,12 @@ import type { Metadata } from "next";
 const SITE_NAME = "Givezy";
 const SITE_URL = "https://givezy.in";
 const SITE_DESCRIPTION =
-  "Donate books and clothes in Hyderabad with free doorstep pickup. Give your pre-loved items a second life — we collect from your home.";
+  "Donate books and clothes in Hyderabad with doorstep pickup. Give your pre-loved items a second life — we collect from your home.";
 
 export function buildMetadata(overrides: Partial<Metadata> = {}): Metadata {
   const title = overrides.title
     ? `${overrides.title} | ${SITE_NAME}`
-    : `${SITE_NAME} — Donate Books & Clothes in Hyderabad | Free Pickup`;
+    : `${SITE_NAME} — Donate Books & Clothes in Hyderabad | Doorstep Pickup`;
 
   const description =
     (overrides.description as string) || SITE_DESCRIPTION;
@@ -29,7 +29,7 @@ export function buildMetadata(overrides: Partial<Metadata> = {}): Metadata {
           url: `${SITE_URL}/og-image.png`,
           width: 1200,
           height: 630,
-          alt: "Givezy — Donate Books & Clothes in Hyderabad with Free Pickup",
+          alt: "Givezy — Donate Books & Clothes in Hyderabad with Doorstep Pickup",
         },
       ],
     },

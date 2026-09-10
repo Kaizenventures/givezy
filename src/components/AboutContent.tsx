@@ -67,7 +67,7 @@ export default function AboutContent() {
                 <p>
                   You have to find an NGO, pack things up, and figure out drop-off logistics.
                   We remove that friction entirely. You tell us what you have, we come to your
-                  doorstep and pick it up — for free.
+                  doorstep and pick it up.
                 </p>
               </div>
             </AnimatedSection>

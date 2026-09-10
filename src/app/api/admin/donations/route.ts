@@ -22,9 +22,7 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status");
   const category = searchParams.get("category");
 
-  let query = db.select().from(donations).orderBy(desc(donations.createdAt));
-
-  const results = await query;
+  const results = await db.select().from(donations).orderBy(desc(donations.createdAt));
 
   // Filter in JS for simplicity (SQLite + Drizzle dynamic where can be verbose)
   let filtered = results;

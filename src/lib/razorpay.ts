@@ -86,11 +86,3 @@ export function verifyPaymentSignature(
 
   return expectedSignature === razorpaySignature;
 }
-
-/**
- * Calculate service charge (5% by default)
- */
-export function calculateServiceCharge(subtotalPaise: number): number {
-  const percent = parseInt(process.env.NEXT_PUBLIC_SERVICE_CHARGE_PERCENT || "5");
-  return Math.round(subtotalPaise * (percent / 100));
-}

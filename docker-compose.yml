@@ -31,7 +31,6 @@ services:
       - PICKUP_PINCODE=${PICKUP_PINCODE:-500001}
       - PICKUP_PHONE=${PICKUP_PHONE}
       # Service charge
-      - NEXT_PUBLIC_SERVICE_CHARGE_PERCENT=5
 
   caddy:
     image: caddy:2-alpine
