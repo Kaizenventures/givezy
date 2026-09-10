@@ -20,6 +20,7 @@ interface Config {
   accepting: boolean;
   remaining: number | null;
   demo: boolean;
+  paymentsReady: boolean;
 }
 
 declare global {
@@ -273,6 +274,11 @@ export default function DonationForm() {
     }
   }
 
+  const paymentsDown = config ? !config.paymentsReady : false;
+  // Both states collect details instead of taking money
+  const collectOnly = paymentsDown || (config ? !config.accepting : false);
+  const atCapacity = collectOnly;
+
   if (loadingConfig) {
     return (
       <div className="max-w-xl mx-auto flex items-center justify-center gap-2 text-gray-400 py-16">
@@ -290,13 +296,14 @@ export default function DonationForm() {
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">You&apos;re on the list</h2>
         <p className="text-gray-500 text-sm max-w-sm mx-auto">
-          We&apos;re at capacity for now. We&apos;ll reach out on {donorPhone} as soon as a pickup slot opens up.
+          {paymentsDown
+            ? `We'll reach out on ${donorPhone} the moment doorstep pickups go live.`
+            : `We're at capacity for now. We'll reach out on ${donorPhone} as soon as a pickup slot opens up.`}
         </p>
       </div>
     );
   }
 
-  const atCapacity = config && !config.accepting;
 
   return (
     <div className="max-w-xl mx-auto">
@@ -314,11 +321,15 @@ export default function DonationForm() {
         </div>
       )}
 
-      {atCapacity && (
+      {collectOnly && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-          <p className="font-semibold text-amber-900 text-sm">We&apos;re at capacity right now</p>
+          <p className="font-semibold text-amber-900 text-sm">
+            {paymentsDown ? "Pickups open very soon" : "We're at capacity right now"}
+          </p>
           <p className="text-amber-700 text-sm mt-1">
-            Leave your name and number and we&apos;ll get in touch the moment a pickup slot opens up.
+            {paymentsDown
+              ? "We're putting the finishing touches on doorstep pickups. Leave your details and you'll be first to know when we go live."
+              : "Leave your name and number and we'll get in touch the moment a pickup slot opens up."}
           </p>
         </div>
       )}
@@ -533,7 +544,7 @@ export default function DonationForm() {
           className="w-full mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-amber-600 rounded-xl hover:bg-amber-700 transition-all disabled:opacity-50"
         >
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-          Join the waiting list
+          {paymentsDown ? "Notify me when pickups open" : "Join the waiting list"}
         </button>
       ) : (
         <>

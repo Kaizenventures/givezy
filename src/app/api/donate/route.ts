@@ -7,7 +7,7 @@ import path from "path";
 import { getBuckets, findBucket } from "@/lib/settings";
 import { checkCapacity } from "@/lib/capacity";
 import { createRazorpayOrder } from "@/lib/razorpay";
-import { isDemoMode, demoPaymentId } from "@/lib/demo";
+import { isDemoMode, demoPaymentId, canAcceptDonations } from "@/lib/demo";
 import { settlePayment } from "@/lib/settle-payment";
 import { enforceRateLimit } from "@/lib/rate-limit";
 
@@ -47,6 +47,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Those photos are too large. Please add fewer or smaller images." },
         { status: 413 },
+      );
+    }
+
+    if (!canAcceptDonations()) {
+      return NextResponse.json(
+        { error: "Donations aren't open yet", paymentsUnavailable: true },
+        { status: 503 },
       );
     }
 

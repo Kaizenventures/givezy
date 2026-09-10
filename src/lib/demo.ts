@@ -22,3 +22,17 @@ export const DEMO_PAYMENT_PREFIX = "demo_";
 export function isDemoRecord(razorpayPaymentId: string | null): boolean {
   return !!razorpayPaymentId?.startsWith(DEMO_PAYMENT_PREFIX);
 }
+
+/** True when a real Razorpay account is wired up. */
+export function paymentsConfigured(): boolean {
+  return !!process.env.RAZORPAY_KEY_ID && !!process.env.RAZORPAY_KEY_SECRET;
+}
+
+/**
+ * Can the site actually take a donation right now? False before the gateway is
+ * connected and with demo mode off — the donate page then collects interest
+ * instead of showing a pay button that cannot work.
+ */
+export function canAcceptDonations(): boolean {
+  return paymentsConfigured() || isDemoMode();
+}

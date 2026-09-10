@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSiteConfig } from "@/lib/settings";
 import { checkCapacity } from "@/lib/capacity";
-import { isDemoMode } from "@/lib/demo";
+import { isDemoMode, canAcceptDonations } from "@/lib/demo";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +35,7 @@ export async function GET() {
       accepting: capacity.available,
       remaining: capacity.remaining,
       demo: isDemoMode(),
+      paymentsReady: canAcceptDonations(),
     });
   } catch (error) {
     console.error("Config error:", error);
