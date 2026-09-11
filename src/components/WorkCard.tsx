@@ -34,7 +34,7 @@ export default function WorkCard({
           {d.donorArea ? `, ${d.donorArea}` : ""} — {d.donorPincode}
         </p>
         <p className="text-xs text-gray-400 mt-0.5">
-          {d.weightBucket.replace(/-/g, " ")} ·{" "}
+          {item.bagLabel} ·{" "}
           {new Date(d.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
         </p>
       </div>

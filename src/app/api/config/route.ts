@@ -7,28 +7,29 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/config
- * Public config the donate form needs: prices, copy, and whether we're
- * still accepting pickups right now.
+ * Public config the donate form needs: bag sizes and prices, copy, and whether
+ * we're still accepting pickups right now.
  */
 export async function GET() {
   try {
-    const [{ buckets, countBuckets, genres, content }, capacity] = await Promise.all([
+    const [{ bags, genres, content }, capacity] = await Promise.all([
       getSiteConfig(),
       checkCapacity(),
     ]);
 
-    const shape = (b: (typeof buckets)[number]) => ({
-      id: b.id,
-      label: b.label,
-      hint: b.hint,
-      maxKg: b.maxKg,
-      pricePaise: b.pricePaise,
-      priceDisplay: `₹${(b.pricePaise / 100).toFixed(0)}`,
-    });
-
     return NextResponse.json({
-      buckets: buckets.map(shape),
-      countBuckets: countBuckets.map(shape),
+      // Courier-only fields (packed size, sack weight) stay server-side
+      bags: bags.map((b) => ({
+        id: b.id,
+        label: b.label,
+        hint: b.hint,
+        widthCm: b.widthCm,
+        lengthCm: b.lengthCm,
+        approxBooks: b.approxBooks,
+        maxKg: b.maxKg,
+        pricePaise: b.pricePaise,
+        priceDisplay: `₹${(b.pricePaise / 100).toFixed(0)}`,
+      })),
       genres,
       content: {
         clothesComingSoon: content.clothesComingSoon,

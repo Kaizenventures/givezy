@@ -2,26 +2,23 @@
 
 import { useState } from "react";
 import { Loader2, Save, Plus, Trash2 } from "lucide-react";
-import type { WeightBucket, Caps, SiteContent, Genre } from "@/lib/settings";
+import type { Bag, Caps, SiteContent, Genre } from "@/lib/settings";
 
 type Tab = "pricing" | "caps" | "content";
 
 export default function AdminSettingsForm({
-  initialBuckets,
-  initialCountBuckets,
+  initialBags,
   initialGenres,
   initialCaps,
   initialContent,
 }: {
-  initialBuckets: WeightBucket[];
-  initialCountBuckets: WeightBucket[];
+  initialBags: Bag[];
   initialGenres: Genre[];
   initialCaps: Caps;
   initialContent: SiteContent;
 }) {
   const [tab, setTab] = useState<Tab>("pricing");
-  const [buckets, setBuckets] = useState<WeightBucket[]>(initialBuckets);
-  const [countBuckets, setCountBuckets] = useState<WeightBucket[]>(initialCountBuckets);
+  const [bags, setBags] = useState<Bag[]>(initialBags);
   const [genres, setGenres] = useState<Genre[]>(initialGenres);
   const [caps, setCaps] = useState<Caps>(initialCaps);
   const [content, setContent] = useState<SiteContent>(initialContent);
@@ -35,7 +32,7 @@ export default function AdminSettingsForm({
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ buckets, countBuckets, genres, caps, content }),
+        body: JSON.stringify({ bags, genres, caps, content }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not save");
@@ -47,14 +44,19 @@ export default function AdminSettingsForm({
     }
   }
 
-  function updateBucket(i: number, patch: Partial<WeightBucket>) {
-    setBuckets((prev) => prev.map((b, idx) => (idx === i ? { ...b, ...patch } : b)));
+  function updateBag(i: number, patch: Partial<Bag>) {
+    setBags((prev) => prev.map((b, idx) => (idx === i ? { ...b, ...patch } : b)));
   }
 
-  // Book-count options mirror the weight options and must share their ids, so
-  // only the wording differs between the two scales.
-  function updateCountBucket(i: number, patch: Partial<WeightBucket>) {
-    setCountBuckets((prev) => prev.map((b, idx) => (idx === i ? { ...b, ...patch } : b)));
+  function updatePacked(i: number, axis: 0 | 1 | 2, value: number) {
+    setBags((prev) =>
+      prev.map((b, idx) => {
+        if (idx !== i) return b;
+        const packedCm = [...b.packedCm] as [number, number, number];
+        packedCm[axis] = value;
+        return { ...b, packedCm };
+      }),
+    );
   }
 
   return (
@@ -65,11 +67,11 @@ export default function AdminSettingsForm({
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium capitalize transition-colors ${
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 tab === t ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"
               }`}
             >
-              {t === "caps" ? "Caps" : t}
+              {t === "pricing" ? "Bags & prices" : t === "caps" ? "Daily limits" : "Website text"}
             </button>
           ))}
         </div>
@@ -96,62 +98,81 @@ export default function AdminSettingsForm({
         </div>
       )}
 
-      {/* ─── Pricing ─── */}
+      {/* ─── Bags & prices ─── */}
       {tab === "pricing" && (
         <div className="space-y-4">
           <p className="text-sm text-gray-500">
-            Donors see these options and pay the price shown. Prices are in rupees.{" "}
-            <strong>Grams</strong> is the weight we send to Shiprocket when booking the pickup.
+            The sacks donors choose from. Each is posted empty, filled with books, and collected by
+            courier. Prices are in rupees and go live as soon as you save.
           </p>
 
-          {buckets.map((b, i) => (
+          {bags.map((b, i) => (
             <div key={i} className="border border-gray-200 rounded-xl p-4">
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <Labeled label="Option ID">
-                  <input value={b.id} onChange={(e) => updateBucket(i, { id: e.target.value })} className={inp} />
-                </Labeled>
-                <Labeled label="Label">
-                  <input value={b.label} onChange={(e) => updateBucket(i, { label: e.target.value })} className={inp} />
-                </Labeled>
-                <Labeled label="Max kg">
-                  <input
-                    type="number"
-                    min={1}
-                    value={b.maxKg}
-                    onChange={(e) => updateBucket(i, { maxKg: Number(e.target.value) })}
-                    className={inp}
-                  />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <Labeled label="Name">
+                  <input value={b.label} onChange={(e) => updateBag(i, { label: e.target.value })} className={inp} />
                 </Labeled>
                 <Labeled label="Price (₹)">
                   <input
                     type="number"
                     min={0}
                     value={Math.round(b.pricePaise / 100)}
-                    onChange={(e) => updateBucket(i, { pricePaise: Math.round(Number(e.target.value) * 100) })}
+                    onChange={(e) => updateBag(i, { pricePaise: Math.round(Number(e.target.value) * 100) })}
                     className={inp}
                   />
                 </Labeled>
-                <Labeled label="Ship weight (g)">
-                  <input
-                    type="number"
-                    min={1}
-                    value={b.grams}
-                    onChange={(e) => updateBucket(i, { grams: Number(e.target.value) })}
-                    className={inp}
-                  />
+                <Labeled label="Width (cm)">
+                  <input type="number" min={1} value={b.widthCm} onChange={(e) => updateBag(i, { widthCm: Number(e.target.value) })} className={inp} />
+                </Labeled>
+                <Labeled label="Length (cm)">
+                  <input type="number" min={1} value={b.lengthCm} onChange={(e) => updateBag(i, { lengthCm: Number(e.target.value) })} className={inp} />
+                </Labeled>
+                <Labeled label="Fits about (books)">
+                  <input type="number" min={1} value={b.approxBooks} onChange={(e) => updateBag(i, { approxBooks: Number(e.target.value) })} className={inp} />
+                </Labeled>
+                <Labeled label="Packing limit (kg)">
+                  <input type="number" min={1} step="0.5" value={b.maxKg} onChange={(e) => updateBag(i, { maxKg: Number(e.target.value) })} className={inp} />
+                </Labeled>
+                <Labeled label="Hint shown to donors" className="col-span-2">
+                  <input value={b.hint} onChange={(e) => updateBag(i, { hint: e.target.value })} className={inp} />
                 </Labeled>
               </div>
-              <div className="flex items-end gap-3 mt-3">
-                <Labeled label="Hint shown to donor" className="flex-1">
-                  <input value={b.hint} onChange={(e) => updateBucket(i, { hint: e.target.value })} className={inp} />
+
+              <details className="mt-3">
+                <summary className="text-xs text-gray-500 cursor-pointer select-none">Courier details</summary>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+                  {(["Packed length (cm)", "Packed width (cm)", "Packed height (cm)"] as const).map((label, axis) => (
+                    <Labeled key={label} label={label}>
+                      <input
+                        type="number"
+                        min={1}
+                        value={b.packedCm[axis]}
+                        onChange={(e) => updatePacked(i, axis as 0 | 1 | 2, Number(e.target.value))}
+                        className={inp}
+                      />
+                    </Labeled>
+                  ))}
+                  <Labeled label="Empty bag (g)">
+                    <input type="number" min={1} value={b.tareGrams} onChange={(e) => updateBag(i, { tareGrams: Number(e.target.value) })} className={inp} />
+                  </Labeled>
+                </div>
+                <p className="text-xs text-gray-400 mt-2">
+                  The courier is told this bag weighs {((b.maxKg * 1000 + b.tareGrams) / 1000).toFixed(2)} kg —
+                  the packing limit plus the empty sack.
+                </p>
+                <Labeled label="Option ID — changing this unlinks past bookings" className="mt-3 max-w-xs">
+                  <input value={b.id} onChange={(e) => updateBag(i, { id: e.target.value })} className={inp} />
                 </Labeled>
+              </details>
+
+              <div className="flex justify-end mt-2">
                 <button
-                  onClick={() => setBuckets((prev) => prev.filter((_, idx) => idx !== i))}
-                  disabled={buckets.length <= 1}
-                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed"
-                  aria-label="Remove option"
+                  onClick={() => setBags((prev) => prev.filter((_, idx) => idx !== i))}
+                  disabled={bags.length <= 1}
+                  className="inline-flex items-center gap-1.5 text-xs text-red-500 hover:bg-red-50 rounded-lg px-2 py-1 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Remove bag
                 </button>
               </div>
             </div>
@@ -159,79 +180,31 @@ export default function AdminSettingsForm({
 
           <button
             onClick={() =>
-              setBuckets((prev) => [
+              setBags((prev) => [
                 ...prev,
-                { id: `option-${prev.length + 1}`, label: "New option", hint: "", maxKg: 5, pricePaise: 19900, grams: 4000 },
+                {
+                  id: `bag-${Date.now().toString(36)}`,
+                  label: "New bag",
+                  hint: "",
+                  widthCm: 40,
+                  lengthCm: 60,
+                  approxBooks: 15,
+                  maxKg: 8,
+                  pricePaise: 24900,
+                  packedCm: [50, 35, 20],
+                  tareGrams: 220,
+                },
               ])
             }
             className="inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium hover:underline"
           >
             <Plus className="w-4 h-4" />
-            Add weight option
+            Add a bag size
           </button>
 
           <hr className="border-gray-200 !mt-8" />
 
-          <div>
-            <h3 className="font-semibold text-gray-900">Book-count wording</h3>
-            <p className="text-sm text-gray-500 mt-1 mb-3">
-              The same options described in books rather than kilos, for donors who pick &ldquo;By
-              books&rdquo;. Prices come from the weight options above — only the wording changes here.
-            </p>
-            <div className="space-y-3">
-              {countBuckets.map((b, i) => (
-                <div key={i} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-                  <Labeled label="Matches option ID">
-                    <select
-                      value={b.id}
-                      onChange={(e) => {
-                        const src = buckets.find((x) => x.id === e.target.value);
-                        updateCountBucket(i, {
-                          id: e.target.value,
-                          pricePaise: src?.pricePaise ?? b.pricePaise,
-                          maxKg: src?.maxKg ?? b.maxKg,
-                          grams: src?.grams ?? b.grams,
-                        });
-                      }}
-                      className={inp}
-                    >
-                      {buckets.map((x) => (
-                        <option key={x.id} value={x.id}>{x.id}</option>
-                      ))}
-                    </select>
-                  </Labeled>
-                  <Labeled label="Label">
-                    <input value={b.label} onChange={(e) => updateCountBucket(i, { label: e.target.value })} className={inp} />
-                  </Labeled>
-                  <div className="flex items-end gap-2">
-                    <Labeled label="Hint" className="flex-1">
-                      <input value={b.hint} onChange={(e) => updateCountBucket(i, { hint: e.target.value })} className={inp} />
-                    </Labeled>
-                    <button
-                      onClick={() => setCountBuckets((prev) => prev.filter((_, idx) => idx !== i))}
-                      disabled={countBuckets.length <= 1}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg disabled:opacity-30"
-                      aria-label="Remove"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={() =>
-                setCountBuckets((prev) => {
-                  const src = buckets[0];
-                  return [...prev, { id: src?.id ?? "upto-5kg", label: "New wording", hint: "", maxKg: src?.maxKg ?? 5, pricePaise: src?.pricePaise ?? 19900, grams: src?.grams ?? 4000 }];
-                })
-              }
-              className="inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium hover:underline mt-3"
-            >
-              <Plus className="w-4 h-4" />
-              Add wording
-            </button>
-          </div>
+          <PriceCheck />
 
           <hr className="border-gray-200 !mt-8" />
 
@@ -410,6 +383,121 @@ function Labeled({
     <div className={className}>
       <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
       {children}
+    </div>
+  );
+}
+
+interface Quote {
+  id: string;
+  label: string;
+  pricePaise: number;
+  shippingKg: number;
+  courierPaise: number | null;
+  courierName: string | null;
+  error: string | null;
+}
+
+/** Compares saved prices with what Shiprocket would charge from a given pincode. */
+function PriceCheck() {
+  const [pincode, setPincode] = useState("500032");
+  const [busy, setBusy] = useState(false);
+  const [quotes, setQuotes] = useState<Quote[] | null>(null);
+  const [error, setError] = useState("");
+
+  async function run() {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/price-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pincode }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Couldn't get quotes");
+      setQuotes(data.quotes);
+    } catch (err) {
+      setQuotes(null);
+      setError(err instanceof Error ? err.message : "Couldn't get quotes");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const rupees = (paise: number) => `₹${Math.round(paise / 100)}`;
+
+  return (
+    <div>
+      <h3 className="font-semibold text-gray-900">Check prices against the courier</h3>
+      <p className="text-sm text-gray-500 mt-1 mb-3">
+        Asks Shiprocket what each <em>saved</em> bag would cost to collect from a pincode. If the
+        courier costs more than you charge, you lose money on every pickup of that size.
+      </p>
+      <div className="flex items-end gap-2">
+        <Labeled label="Donor pincode" className="w-36">
+          <input
+            value={pincode}
+            inputMode="numeric"
+            maxLength={6}
+            onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            className={inp}
+          />
+        </Labeled>
+        <button
+          onClick={run}
+          disabled={busy || pincode.length !== 6}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+        >
+          {busy && <Loader2 className="w-4 h-4 animate-spin" />}
+          Get courier quotes
+        </button>
+      </div>
+
+      {error && <p className="text-sm text-red-500 mt-3">{error}</p>}
+
+      {quotes && (
+        <div className="overflow-x-auto mt-4">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 text-left text-gray-500">
+                <th className="pb-2 font-medium">Bag</th>
+                <th className="pb-2 font-medium">Declared weight</th>
+                <th className="pb-2 font-medium">You charge</th>
+                <th className="pb-2 font-medium">Courier</th>
+                <th className="pb-2 font-medium">Left over</th>
+              </tr>
+            </thead>
+            <tbody>
+              {quotes.map((q) => {
+                const diff = q.courierPaise === null ? null : q.pricePaise - q.courierPaise;
+                return (
+                  <tr key={q.id} className="border-b border-gray-100">
+                    <td className="py-2.5 font-medium text-gray-900">{q.label}</td>
+                    <td className="py-2.5 text-gray-500 tabular-nums">{q.shippingKg.toFixed(2)} kg</td>
+                    <td className="py-2.5 tabular-nums">{rupees(q.pricePaise)}</td>
+                    <td className="py-2.5 tabular-nums">
+                      {q.courierPaise === null ? (
+                        <span className="text-gray-400">{q.error || "No quote"}</span>
+                      ) : (
+                        <>
+                          {rupees(q.courierPaise)}
+                          {q.courierName && <span className="text-xs text-gray-400"> · {q.courierName}</span>}
+                        </>
+                      )}
+                    </td>
+                    <td className={`py-2.5 font-medium tabular-nums ${diff === null ? "text-gray-400" : diff < 0 ? "text-red-600" : "text-emerald-600"}`}>
+                      {diff === null ? "—" : diff < 0 ? `−${rupees(-diff)} loss` : rupees(diff)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <p className="text-xs text-gray-400 mt-2">
+            &ldquo;Left over&rdquo; must also cover the bag itself and posting it out.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

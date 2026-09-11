@@ -4,7 +4,7 @@ import { donations, shipments } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { isAdmin } from "@/lib/admin-guard";
 import { createShipmentOrder, getShippingEstimate } from "@/lib/shiprocket";
-import { getBuckets, findBucket } from "@/lib/settings";
+import { getBags, findBag, shippingGrams } from "@/lib/settings";
 
 /**
  * POST /api/admin/donations/[id]/fulfil
@@ -41,9 +41,11 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
     );
   }
 
-  const buckets = await getBuckets();
-  const bucket = findBucket(buckets, donation.weightBucket);
-  const weightGrams = bucket?.grams ?? 4000;
+  const buckets = await getBags();
+  const bucket = findBag(buckets, donation.weightBucket);
+  // Declare the bag's packing limit plus the sack itself: under-declaring draws
+  // courier weight-discrepancy charges after pickup
+  const weightGrams = bucket ? shippingGrams(bucket) : 5220;
 
   // Record what the courier actually charges so under-priced buckets are visible
   const estimate = await getShippingEstimate(donation.donorPincode, weightGrams);
@@ -61,6 +63,7 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
     itemCategory: donation.category,
     quantity: 1,
     weightGrams,
+    dimensionsCm: bucket?.packedCm,
     totalPaidRupees: shipment.totalAmount / 100,
   });
 

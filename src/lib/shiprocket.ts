@@ -160,6 +160,8 @@ export async function createShipmentOrder(params: {
   itemCategory: string;
   quantity: number;
   weightGrams: number;
+  /** Packed bag size in cm (length, breadth, height). */
+  dimensionsCm?: [number, number, number];
   totalPaidRupees: number;
 }): Promise<CreateShipmentResult> {
   if (!SHIPROCKET_EMAIL || !SHIPROCKET_PASSWORD) {
@@ -208,9 +210,11 @@ export async function createShipmentOrder(params: {
       ],
       payment_method: "Prepaid",
       sub_total: params.totalPaidRupees,
-      length: 30, // cm — default box size
-      breadth: 25,
-      height: 15,
+      // Couriers bill the greater of actual and volumetric weight, so send the
+      // real packed bag size rather than a generic box
+      length: params.dimensionsCm?.[0] ?? 30,
+      breadth: params.dimensionsCm?.[1] ?? 25,
+      height: params.dimensionsCm?.[2] ?? 15,
       weight: params.weightGrams / 1000, // kg
     };
 

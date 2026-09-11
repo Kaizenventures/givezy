@@ -3,7 +3,7 @@ import DonationReceipt, { type ReceiptData } from "@/components/DonationReceipt"
 import { db } from "@/lib/db";
 import { donations, shipments } from "@/lib/schema";
 import { eq } from "drizzle-orm";
-import { getBuckets, getCountBuckets, getGenres, findBucket } from "@/lib/settings";
+import { getBags, getGenres, findBag, bagLabel } from "@/lib/settings";
 import { isDemoRecord } from "@/lib/demo";
 import { buildMetadata } from "@/lib/seo";
 
@@ -29,9 +29,8 @@ export default async function SuccessPage({
     const [donation] = await db.select().from(donations).where(eq(donations.id, id)).limit(1);
 
     if (donation) {
-      const buckets =
-        donation.sizeMode === "count" ? await getCountBuckets() : await getBuckets();
-      const bucket = findBucket(buckets, donation.weightBucket);
+      const bags = await getBags();
+      const bucket = findBag(bags, donation.weightBucket);
       if (bucket) {
         maxKg = bucket.maxKg;
         bucketLabel = bucket.label;
@@ -64,7 +63,7 @@ export default async function SuccessPage({
           address: donation.donorAddress,
           pincode: donation.donorPincode,
           city: donation.donorArea,
-          sizeLabel: bucket?.label ?? donation.weightBucket,
+          sizeLabel: bagLabel(bags, donation.weightBucket),
           maxKg: bucket?.maxKg ?? 0,
           genres: genreIds
             .map((gid) => allGenres.find((g) => g.id === gid)?.label)

@@ -9,6 +9,9 @@ interface Bucket {
   id: string;
   label: string;
   hint: string;
+  widthCm: number;
+  lengthCm: number;
+  approxBooks: number;
   maxKg: number;
   pricePaise: number;
   priceDisplay: string;
@@ -20,8 +23,7 @@ interface Genre {
 }
 
 interface Config {
-  buckets: Bucket[];
-  countBuckets: Bucket[];
+  bags: Bucket[];
   genres: Genre[];
   content: {
     clothesComingSoon: boolean;
@@ -86,7 +88,6 @@ export default function DonationForm() {
   const [category, setCategory] = useState("books");
   const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([]);
   const [bucketId, setBucketId] = useState("");
-  const [sizeMode, setSizeMode] = useState<"weight" | "count">("count");
   const [genres, setGenres] = useState<string[]>([]);
 
   const [donorName, setDonorName] = useState("");
@@ -105,7 +106,7 @@ export default function DonationForm() {
       .then((r) => r.json())
       .then((data: Config) => {
         setConfig(data);
-        if (data.buckets?.length) setBucketId(data.buckets[0].id);
+        if (data.bags?.length) setBucketId(data.bags[0].id);
       })
       .catch(() => setError("Could not load donation options. Please refresh."))
       .finally(() => setLoadingConfig(false));
@@ -117,8 +118,12 @@ export default function DonationForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Both scales share bucket ids, so switching the toggle keeps the selection
-  const activeBuckets = (sizeMode === "count" ? config?.countBuckets : config?.buckets) || [];
+  const activeBuckets = config?.bags || [];
+  // One scale for every drawing, so the sacks compare at their true relative size
+  const drawScale = Math.min(
+    64 / Math.max(1, ...activeBuckets.map((b) => b.lengthCm)),
+    48 / Math.max(1, ...activeBuckets.map((b) => b.widthCm)),
+  );
   const selectedBucket = activeBuckets.find((b) => b.id === bucketId) || null;
 
   function toggleGenre(id: string) {
@@ -169,7 +174,7 @@ export default function DonationForm() {
     if (donorEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(donorEmail)) errs.donorEmail = "Enter a valid email address";
     if (!donorAddress.trim()) errs.donorAddress = "Please enter your pickup address";
     if (donorPincode.length !== 6) errs.donorPincode = "Pincode must be 6 digits";
-    if (!bucketId) errs.bucket = "Please pick roughly how much you're donating";
+    if (!bucketId) errs.bucket = "Please pick a bag size";
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
   }, [donorName, donorPhone, donorEmail, donorAddress, donorPincode, bucketId]);
@@ -187,7 +192,6 @@ export default function DonationForm() {
       const formData = new FormData();
       formData.append("category", category);
       formData.append("weightBucket", bucketId);
-      formData.append("sizeMode", sizeMode);
       genres.forEach((g) => formData.append("genres", g));
       formData.append("donorName", donorName);
       formData.append("donorPhone", donorPhone);
@@ -265,7 +269,7 @@ export default function DonationForm() {
     }
   }, [
     validate, selectedBucket, category, bucketId, donorName, donorPhone, donorEmail,
-    donorAddress, donorPincode, donorCity, whatsappOptin, photos, router, sizeMode, genres,
+    donorAddress, donorPincode, donorCity, whatsappOptin, photos, router, genres,
   ]);
 
   async function handleWaitlist() {
@@ -467,54 +471,48 @@ export default function DonationForm() {
         </>
       )}
 
-      {/* How much — by book count or by weight */}
-      <div className="flex items-center justify-between mb-1 gap-3 flex-wrap">
-        <h3 className="text-sm font-semibold text-gray-900">
-          <Package className="w-3.5 h-3.5 inline mr-1" />
-          Roughly how much are you donating?
-        </h3>
-        <div className="flex bg-gray-100 rounded-lg p-0.5" role="group" aria-label="Size by">
-          {(["count", "weight"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setSizeMode(m)}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                sizeMode === m ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"
-              }`}
-            >
-              {m === "count" ? "By books" : "By weight"}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Bag size */}
+      <h3 className="text-sm font-semibold text-gray-900 mb-1">
+        <Package className="w-3.5 h-3.5 inline mr-1" />
+        Pick your bag
+      </h3>
       <p className="text-xs text-gray-400 mb-3">
-        {sizeMode === "count"
-          ? "Not sure? Count the books — it's easier to judge than weight. Same price either way."
-          : "Pick your best estimate. The courier weighs the package at pickup — if it's well over what you selected, we may need to adjust the charge."}
+        We post you an empty kraft sack in this size. Fill it with books and the courier collects it.
+        They weigh it at pickup, so please stay within the limit.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
-        {activeBuckets.map((b) => (
-          <button
-            key={b.id}
-            type="button"
-            onClick={() => setBucketId(b.id)}
-            className={`py-3 px-3 rounded-xl border text-left transition-all ${
-              bucketId === b.id ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-gray-300"
-            }`}
-          >
-            <span className={`block text-sm font-semibold ${bucketId === b.id ? "text-emerald-700" : "text-gray-800"}`}>
-              {b.label}
-            </span>
-            <span className={`block text-xs mt-0.5 ${bucketId === b.id ? "text-emerald-600" : "text-gray-400"}`}>
-              {b.hint}
-            </span>
-            <span className={`block text-sm font-bold mt-1.5 ${bucketId === b.id ? "text-emerald-700" : "text-gray-600"}`}>
-              {b.priceDisplay}
-            </span>
-          </button>
-        ))}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2" role="radiogroup" aria-label="Bag size">
+        {activeBuckets.map((b) => {
+          const on = bucketId === b.id;
+          return (
+            <button
+              key={b.id}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              onClick={() => setBucketId(b.id)}
+              className={`p-3 rounded-xl border text-left transition-all flex sm:flex-col items-center sm:items-stretch gap-3 ${
+                on ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-gray-300"
+              }`}
+            >
+              <BagDrawing widthCm={b.widthCm} lengthCm={b.lengthCm} scale={drawScale} />
+              <span className="flex-1">
+                <span className={`block text-sm font-semibold ${on ? "text-emerald-700" : "text-gray-800"}`}>
+                  {b.label}
+                </span>
+                <span className="block text-xs text-gray-400 mt-0.5 tabular-nums">
+                  {b.widthCm} × {b.lengthCm} cm
+                </span>
+                <span className={`block text-xs mt-1.5 ${on ? "text-emerald-700" : "text-gray-600"}`}>
+                  About {b.approxBooks} books · up to {b.maxKg} kg
+                </span>
+                <span className={`block text-sm font-bold mt-1.5 ${on ? "text-emerald-700" : "text-gray-700"}`}>
+                  {b.priceDisplay}
+                </span>
+              </span>
+            </button>
+          );
+        })}
       </div>
       {fieldErrors.bucket && <p className="text-xs text-red-500 mb-2">{fieldErrors.bucket}</p>}
 
@@ -524,7 +522,7 @@ export default function DonationForm() {
           <div>
             <p className="text-xs text-gray-400">Payable amount</p>
             <p className="text-xs text-gray-500 mt-0.5">
-              Covers doorstep pickup, up to {selectedBucket.maxKg} kg
+              {selectedBucket.label} posted to you, collected when full — up to {selectedBucket.maxKg} kg
             </p>
           </div>
           <p className="text-2xl font-bold">{selectedBucket.priceDisplay}</p>
@@ -678,5 +676,25 @@ function Field({
       {children}
       {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
     </div>
+  );
+}
+
+/** A sack drawn to shared scale, stitched along the bottom and one side like the real bags. */
+function BagDrawing({ widthCm, lengthCm, scale }: { widthCm: number; lengthCm: number; scale: number }) {
+  const w = widthCm * scale;
+  const h = lengthCm * scale;
+  const x = (52 - w) / 2;
+  const y = 68 - h;
+  return (
+    <svg viewBox="0 0 52 70" className="w-12 h-16 sm:w-full sm:h-20 shrink-0" aria-hidden="true">
+      <rect x={x} y={y} width={w} height={h} rx="1" fill="#E4CFA8" stroke="#B0946A" strokeWidth="0.8" />
+      <path
+        d={`M ${x + 1.5} ${y + h - 2} H ${x + w - 2} V ${y + 1.5}`}
+        fill="none"
+        stroke="#FFFFFF"
+        strokeWidth="0.6"
+        strokeDasharray="1.6 1.2"
+      />
+    </svg>
   );
 }

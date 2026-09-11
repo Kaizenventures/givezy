@@ -4,7 +4,7 @@ import { donations, shipments } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
-import { getBuckets, getCountBuckets, getGenres, findBucket } from "@/lib/settings";
+import { getBags, getGenres, findBag } from "@/lib/settings";
 import { checkCapacity } from "@/lib/capacity";
 import { createRazorpayOrder } from "@/lib/razorpay";
 import { isDemoMode, demoPaymentId, canAcceptDonations } from "@/lib/demo";
@@ -71,7 +71,6 @@ export async function POST(req: NextRequest) {
 
     const category = str("category");
     const weightBucket = str("weightBucket");
-    const sizeMode = str("sizeMode") === "count" ? "count" : "weight";
     const donorName = str("donorName");
     const donorPhone = str("donorPhone");
     const donorEmail = str("donorEmail");
@@ -91,12 +90,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Only book donations are open right now" }, { status: 400 });
     }
 
-    // Price comes from server-side settings, never from the client. Both scales
-    // resolve to the same bucket ids, so only the labelling differs.
-    const buckets = sizeMode === "count" ? await getCountBuckets() : await getBuckets();
-    const bucket = findBucket(buckets, weightBucket);
+    // Price comes from server-side settings, never from the client
+    const bucket = findBag(await getBags(), weightBucket);
     if (!bucket) {
-      return NextResponse.json({ error: "Unknown size option" }, { status: 400 });
+      return NextResponse.json({ error: "Please pick one of the bag sizes" }, { status: 400 });
     }
 
     // Genres are optional, but must be ones we actually offer
@@ -142,7 +139,7 @@ export async function POST(req: NextRequest) {
         photos: JSON.stringify(photoUrls),
         imageUrl: photoUrls[0] || null,
         weightBucket: bucket.id,
-        sizeMode,
+        sizeMode: "bag",
         genres: JSON.stringify(genres),
         status: "pending_payment",
         donorName,

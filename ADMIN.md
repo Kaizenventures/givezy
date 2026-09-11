@@ -18,7 +18,7 @@ there's nothing to do in it.
 ## How a donation works, start to finish
 
 1. Someone fills in the form on givezy.in and pays the pickup fee.
-2. **You post them a de-clutter bag.**
+2. **You post them an empty de-clutter bag** in the size they chose.
 3. They pack it and message us on WhatsApp.
 4. **You book the courier**, which collects it and brings it to us.
 5. It arrives. Done.
@@ -30,7 +30,8 @@ Steps 2 and 4 are the only bits that need you. The website handles the rest.
 ## The Today page
 
 ### "Post a de-clutter bag"
-They've paid. Post their bag using the address shown, then press **Bag posted**.
+They've paid. Each entry shows which bag they chose — small, medium or large. Post
+that size to the address shown, then press **Bag posted**.
 
 The WhatsApp button next to each person opens a chat with a message already
 written — you can edit it before sending, or just send it.
@@ -80,7 +81,7 @@ The courier has it. Press **Received** once it reaches us.
 
 ## Setting a daily limit
 
-**Settings → Caps.** Set "daily" to however many pickups you can genuinely handle
+**Settings → Daily limits.** Set "daily" to however many pickups you can genuinely handle
 in a day.
 
 Once you hit that number, the website stops taking payments and offers people a
@@ -93,23 +94,31 @@ You can see how full today is at the bottom of the Today page.
 
 ---
 
-## Changing prices
+## Bags and prices
 
-**Settings → Pricing.** Prices are in rupees. Change one, press **Save changes**,
-and the website updates immediately.
+**Settings → Bags & prices.** Each bag has a name, its size in centimetres, roughly
+how many books fit, a packing limit in kilos, and a price in rupees. Change one,
+press **Save changes**, and the website updates immediately.
 
-There are two sets of wording for the same three options — one in kilos, one in
-book counts — because donors can choose which way they'd rather estimate. The
-price comes from the kilo version; the book-count version only changes the words.
+**Before trusting a price, check it against the courier.** Under the bags there's
+**Check prices against the courier**. Type a donor pincode and press **Get courier
+quotes**. For each bag it shows what you charge, what Shiprocket would charge to
+collect it, and what's left over. A red "loss" means every pickup of that size
+loses money. What's left over also has to pay for the bag and for posting it out.
 
-**Watch the Payments page.** If it warns that pickups cost more than you charged,
-the courier is charging more than donors are paying, and prices need to go up.
+This only works once Shiprocket is connected, and it checks *saved* prices — save
+first, then check.
 
----
+**The packing limit matters.** It's what donors are told they can fill the bag
+to, and what the courier is told the parcel weighs (plus the empty sack, about
+220 g). If donors regularly overfill, the courier charges more than you quoted.
+
+**Fill one of each bag with real books and weigh it** before going live. The "fits
+about N books" and kilo figures are estimates until someone does.
 
 ## Changing the website text
 
-**Settings → Content.** The headline, the impact paragraphs, the "how it works"
+**Settings → Website text.** The headline, the impact paragraphs, the "how it works"
 steps, and the message people see when you're full. Save and it's live.
 
 ---

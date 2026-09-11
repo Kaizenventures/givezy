@@ -6,6 +6,7 @@ import { waitlist } from "@/lib/schema";
 import { desc } from "drizzle-orm";
 import { AdminShell } from "../layout";
 import WaitlistStatusSelect from "@/components/WaitlistStatusSelect";
+import { getBags, bagLabel } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,10 @@ export default async function AdminWaitlistPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/admin/login");
 
-  const entries = await db.select().from(waitlist).orderBy(desc(waitlist.createdAt));
+  const [entries, bags] = await Promise.all([
+    db.select().from(waitlist).orderBy(desc(waitlist.createdAt)),
+    getBags(),
+  ]);
   const waiting = entries.filter((e) => e.status === "waiting").length;
 
   return (
@@ -49,7 +53,7 @@ export default async function AdminWaitlistPage() {
                   <td className="py-3 text-gray-600">{e.email || "—"}</td>
                   <td className="py-3 text-gray-600">{e.pincode || "—"}</td>
                   <td className="py-3 text-gray-600 capitalize">
-                    {e.category || "—"}{e.weightBucket ? ` · ${e.weightBucket}` : ""}
+                    {e.category || "—"}{e.weightBucket ? ` · ${bagLabel(bags, e.weightBucket)}` : ""}
                   </td>
                   <td className="py-3 text-gray-500">{new Date(e.createdAt).toLocaleDateString("en-IN")}</td>
                   <td className="py-3">

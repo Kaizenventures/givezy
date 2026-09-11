@@ -2,13 +2,22 @@ import { db } from "./db";
 import { settings } from "./schema";
 import { inArray } from "drizzle-orm";
 
-export interface WeightBucket {
+/**
+ * A physical de-clutter bag. Donors choose a bag, not a weight: the bag is what
+ * gets posted to them, what they fill, and what the courier collects.
+ */
+export interface Bag {
   id: string;
   label: string;
   hint: string;
-  maxKg: number;
+  widthCm: number; // flat size of the sack
+  lengthCm: number;
+  approxBooks: number; // shown to donors — most people judge count better than kilos
+  maxKg: number; // the packing limit donors are told
   pricePaise: number;
-  grams: number; // representative weight used for Shiprocket calls
+  // Courier-facing: how the filled bag measures and what the empty sack weighs
+  packedCm: [number, number, number]; // length, breadth, height
+  tareGrams: number;
 }
 
 export interface Genre {
@@ -41,21 +50,49 @@ export interface SiteContent {
   capMessageBody: string;
 }
 
-export const DEFAULT_BUCKETS: WeightBucket[] = [
-  { id: "upto-5kg", label: "Up to 5 kg", hint: "A small stack of books", maxKg: 5, pricePaise: 19900, grams: 4000 },
-  { id: "5-10kg", label: "5 – 10 kg", hint: "A medium box", maxKg: 10, pricePaise: 29900, grams: 8000 },
-  { id: "10-15kg", label: "10 – 15 kg", hint: "A large box", maxKg: 15, pricePaise: 39900, grams: 13000 },
+/*
+ * Sizes are the three sacks the team is sourcing (flat, stitched kraft paper).
+ * Capacities are estimates for books in a pillow-filled sack and should be
+ * confirmed by filling one of each and weighing it. Books are dense enough
+ * that their real weight exceeds courier volumetric weight at every size, so
+ * the courier bills on actual weight — which is why maxKg drives the price.
+ * Prices are placeholders until confirmed against real Shiprocket quotes.
+ */
+export const DEFAULT_BAGS: Bag[] = [
+  {
+    id: "bag-small", label: "Small bag", hint: "A shelf's worth",
+    widthCm: 35, lengthCm: 50, approxBooks: 10, maxKg: 5, pricePaise: 19900,
+    packedCm: [42, 32, 18], tareGrams: 220,
+  },
+  {
+    id: "bag-medium", label: "Medium bag", hint: "A proper clear-out",
+    widthCm: 45, lengthCm: 65, approxBooks: 25, maxKg: 12, pricePaise: 29900,
+    packedCm: [55, 40, 22], tareGrams: 220,
+  },
+  {
+    id: "bag-large", label: "Large bag", hint: "A whole bookcase",
+    widthCm: 55, lengthCm: 85, approxBooks: 45, maxKg: 20, pricePaise: 39900,
+    packedCm: [72, 50, 28], tareGrams: 220,
+  },
 ];
 
-/**
- * Book-count sizing. Most people can estimate "about 30 books" far more
- * accurately than "about 8 kg", so both scales map onto the same priced bucket.
- */
-export const DEFAULT_COUNT_BUCKETS: WeightBucket[] = [
-  { id: "upto-5kg", label: "5 – 15 books", hint: "A small stack", maxKg: 5, pricePaise: 19900, grams: 4000 },
-  { id: "5-10kg", label: "15 – 30 books", hint: "A full shelf", maxKg: 10, pricePaise: 29900, grams: 8000 },
-  { id: "10-15kg", label: "30+ books", hint: "A big clear-out", maxKg: 15, pricePaise: 39900, grams: 13000 },
-];
+/** What the courier should be told the packed bag weighs: the limit plus the sack. */
+export function shippingGrams(bag: Bag): number {
+  return Math.round(bag.maxKg * 1000 + bag.tareGrams);
+}
+
+// Donations booked before bags existed still reference the old weight bands
+const LEGACY_LABELS: Record<string, string> = {
+  "upto-5kg": "Up to 5 kg (pre-bag)",
+  "5-10kg": "5–10 kg (pre-bag)",
+  "10-15kg": "10–15 kg (pre-bag)",
+};
+
+export function bagLabel(bags: Bag[], id: string): string {
+  const bag = bags.find((b) => b.id === id);
+  if (bag) return `${bag.label} (${bag.widthCm}×${bag.lengthCm} cm)`;
+  return LEGACY_LABELS[id] ?? id;
+}
 
 export const DEFAULT_GENRES: Genre[] = [
   { id: "textbooks", label: "School / College textbooks" },
@@ -101,8 +138,8 @@ export const DEFAULT_CONTENT: SiteContent = {
     "Hyderabad has been generous today and every pickup slot is taken. Leave your details and you'll go straight to the front of tomorrow's queue — no payment needed now.",
 };
 
-const KEY_BUCKETS = "pricing.buckets";
-const KEY_COUNT_BUCKETS = "pricing.countBuckets";
+// A new key on purpose — pricing saved under the old weight-band keys is ignored
+const KEY_BAGS = "pricing.bags";
 const KEY_GENRES = "genres";
 const KEY_CAPS = "caps";
 const KEY_CONTENT = "content";
@@ -136,16 +173,10 @@ export async function writeSetting(key: string, value: unknown): Promise<void> {
     });
 }
 
-export async function getBuckets(): Promise<WeightBucket[]> {
-  const found = (await readMany([KEY_BUCKETS]))[KEY_BUCKETS];
-  if (!Array.isArray(found) || found.length === 0) return DEFAULT_BUCKETS;
-  return found as WeightBucket[];
-}
-
-export async function getCountBuckets(): Promise<WeightBucket[]> {
-  const found = (await readMany([KEY_COUNT_BUCKETS]))[KEY_COUNT_BUCKETS];
-  if (!Array.isArray(found) || found.length === 0) return DEFAULT_COUNT_BUCKETS;
-  return found as WeightBucket[];
+export async function getBags(): Promise<Bag[]> {
+  const found = (await readMany([KEY_BAGS]))[KEY_BAGS];
+  if (!Array.isArray(found) || found.length === 0) return DEFAULT_BAGS;
+  return found as Bag[];
 }
 
 export async function getGenres(): Promise<Genre[]> {
@@ -165,21 +196,17 @@ export async function getContent(): Promise<SiteContent> {
 }
 
 export async function getSiteConfig() {
-  const [buckets, countBuckets, genres, caps, content] = await Promise.all([
-    getBuckets(),
-    getCountBuckets(),
+  const [bags, genres, caps, content] = await Promise.all([
+    getBags(),
     getGenres(),
     getCaps(),
     getContent(),
   ]);
-  return { buckets, countBuckets, genres, caps, content };
+  return { bags, genres, caps, content };
 }
 
-export async function setBuckets(v: WeightBucket[]) {
-  return writeSetting(KEY_BUCKETS, v);
-}
-export async function setCountBuckets(v: WeightBucket[]) {
-  return writeSetting(KEY_COUNT_BUCKETS, v);
+export async function setBags(v: Bag[]) {
+  return writeSetting(KEY_BAGS, v);
 }
 export async function setGenres(v: Genre[]) {
   return writeSetting(KEY_GENRES, v);
@@ -191,6 +218,6 @@ export async function setContent(v: SiteContent) {
   return writeSetting(KEY_CONTENT, v);
 }
 
-export function findBucket(buckets: WeightBucket[], id: string): WeightBucket | undefined {
-  return buckets.find((b) => b.id === id);
+export function findBag(bags: Bag[], id: string): Bag | undefined {
+  return bags.find((b) => b.id === id);
 }

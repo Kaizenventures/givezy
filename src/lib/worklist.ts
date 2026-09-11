@@ -2,6 +2,7 @@ import { db } from "./db";
 import { donations, shipments, waitlist } from "./schema";
 import { desc, eq } from "drizzle-orm";
 import type { Donation, Shipment } from "./schema";
+import { getBags, bagLabel, type Bag } from "./settings";
 
 /** How long after starting checkout an unpaid donation counts as abandoned. */
 export const ABANDONED_AFTER_MINUTES = 30;
@@ -9,6 +10,7 @@ export const ABANDONED_AFTER_MINUTES = 30;
 export interface WorkItem {
   donation: Donation;
   shipment: Shipment | null;
+  bagLabel: string;
 }
 
 export interface Worklist {
@@ -26,15 +28,20 @@ export interface Worklist {
   inTransit: WorkItem[];
 }
 
-function pair(ds: Donation[], byDonation: Map<string, Shipment>): WorkItem[] {
-  return ds.map((d) => ({ donation: d, shipment: byDonation.get(d.id) ?? null }));
+function pair(ds: Donation[], byDonation: Map<string, Shipment>, bags: Bag[]): WorkItem[] {
+  return ds.map((d) => ({
+    donation: d,
+    shipment: byDonation.get(d.id) ?? null,
+    bagLabel: bagLabel(bags, d.weightBucket),
+  }));
 }
 
 export async function getWorklist(now: Date = new Date()): Promise<Worklist> {
-  const [allDonations, allShipments, waitingRows] = await Promise.all([
+  const [allDonations, allShipments, waitingRows, bags] = await Promise.all([
     db.select().from(donations).orderBy(desc(donations.createdAt)),
     db.select().from(shipments),
     db.select({ id: waitlist.id }).from(waitlist).where(eq(waitlist.status, "waiting")),
+    getBags(),
   ]);
 
   const byDonation = new Map(allShipments.map((s) => [s.donationId, s]));
@@ -43,17 +50,19 @@ export async function getWorklist(now: Date = new Date()): Promise<Worklist> {
   const byStatus = (status: string) => allDonations.filter((d) => d.status === status);
 
   return {
-    postBag: pair(byStatus("paid"), byDonation),
-    awaitingDonor: pair(byStatus("bag_sent"), byDonation),
-    bookPickup: pair(byStatus("packed"), byDonation),
+    postBag: pair(byStatus("paid"), byDonation, bags),
+    awaitingDonor: pair(byStatus("bag_sent"), byDonation, bags),
+    bookPickup: pair(byStatus("packed"), byDonation, bags),
     abandoned: pair(
       allDonations.filter((d) => d.status === "pending_payment" && d.createdAt < cutoff),
       byDonation,
+      bags,
     ),
     waitingList: waitingRows.length,
     inTransit: pair(
       allDonations.filter((d) => ["pickup_scheduled", "picked_up"].includes(d.status)),
       byDonation,
+      bags,
     ),
   };
 }

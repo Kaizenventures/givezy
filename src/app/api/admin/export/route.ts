@@ -4,6 +4,7 @@ import { donations, shipments, leads, waitlist } from "@/lib/schema";
 import { desc } from "drizzle-orm";
 import { isAdmin } from "@/lib/admin-guard";
 import { statusLabel } from "@/lib/donation-status";
+import { getBags, bagLabel } from "@/lib/settings";
 
 function toCsv(headers: string[], rows: (string | number)[][]): string {
   const escape = (cell: string | number) => {
@@ -30,6 +31,7 @@ export async function GET(req: NextRequest) {
   }
 
   const type = new URL(req.url).searchParams.get("type") || "donations";
+  const bags = await getBags();
 
   if (type === "leads") {
     const rows = await db.select().from(leads).orderBy(desc(leads.createdAt));
@@ -47,10 +49,10 @@ export async function GET(req: NextRequest) {
     return csvResponse(
       "waitlist",
       toCsv(
-        ["ID", "Name", "Phone", "Email", "Pincode", "Category", "Weight Option", "Status", "Notes", "Joined At"],
+        ["ID", "Name", "Phone", "Email", "Pincode", "Category", "Bag", "Status", "Notes", "Joined At"],
         rows.map((r) => [
           r.id, r.name, r.phone, r.email || "", r.pincode || "",
-          r.category || "", r.weightBucket || "", r.status, r.notes || "", r.createdAt,
+          r.category || "", r.weightBucket ? bagLabel(bags, r.weightBucket) : "", r.status, r.notes || "", r.createdAt,
         ]),
       ),
     );
@@ -65,7 +67,7 @@ export async function GET(req: NextRequest) {
     return [
       d.id,
       d.category,
-      d.weightBucket,
+      bagLabel(bags, d.weightBucket),
       d.title || "",
       d.description || "",
       statusLabel(d.status),
@@ -93,7 +95,7 @@ export async function GET(req: NextRequest) {
     "donations",
     toCsv(
       [
-        "ID", "Category", "Weight Option", "Title", "Description", "Status",
+        "ID", "Category", "Bag", "Title", "Description", "Status",
         "Donor Name", "Donor Phone", "Donor Email", "Donor Address", "Donor Pincode", "Donor Area",
         "WhatsApp Opt-in", "Amount Paid (INR)", "Payment Status", "Razorpay Payment ID",
         "Fulfilment Status", "Shiprocket Order ID", "AWB", "Courier Quoted (INR)",

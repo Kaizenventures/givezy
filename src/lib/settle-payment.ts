@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { donations, shipments } from "./schema";
 import { eq } from "drizzle-orm";
-import { getBuckets, findBucket } from "./settings";
+import { getBags, findBag } from "./settings";
 import { sendDonationNotices } from "./notify";
 import { isDemoRecord } from "./demo";
 
@@ -57,7 +57,7 @@ export async function settlePayment(params: {
     .limit(1);
 
   if (donation) {
-    const bucket = findBucket(await getBuckets(), donation.weightBucket);
+    const bucket = findBag(await getBags(), donation.weightBucket);
     sendDonationNotices({
       donationId: donation.id,
       donorName: donation.donorName,

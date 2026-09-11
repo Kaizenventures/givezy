@@ -2,14 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin-guard";
 import {
   getSiteConfig,
-  setBuckets,
-  setCountBuckets,
+  setBags,
   setGenres,
   setCaps,
   setContent,
   DEFAULT_CONTENT,
   DEFAULT_CAPS,
-  type WeightBucket,
+  type Bag,
   type Caps,
   type SiteContent,
   type Genre,
@@ -24,22 +23,33 @@ export async function GET() {
   return NextResponse.json(await getSiteConfig());
 }
 
-function sanitizeBuckets(input: unknown): WeightBucket[] | null {
+function sanitizeBags(input: unknown): Bag[] | null {
   if (!Array.isArray(input) || input.length === 0) return null;
-  const out: WeightBucket[] = [];
+  const positive = (v: unknown, fallback: number) => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : fallback;
+  };
+  const seen = new Set<string>();
+  const out: Bag[] = [];
   for (const raw of input) {
-    const b = raw as Partial<WeightBucket>;
-    const id = String(b.id || "").trim();
+    const b = (raw || {}) as Partial<Bag>;
+    const id = String(b.id || "").trim().slice(0, 40);
     const pricePaise = Number(b.pricePaise);
-    const maxKg = Number(b.maxKg);
-    if (!id || !Number.isFinite(pricePaise) || pricePaise < 0) return null;
+    // Bookings reference bags by id, so ids must be present and unique
+    if (!id || seen.has(id) || !Number.isFinite(pricePaise) || pricePaise < 0) return null;
+    seen.add(id);
+    const packed = Array.isArray(b.packedCm) ? b.packedCm : [];
     out.push({
       id,
       label: String(b.label || id).slice(0, 60),
       hint: String(b.hint || "").slice(0, 120),
-      maxKg: Number.isFinite(maxKg) && maxKg > 0 ? maxKg : 5,
+      widthCm: positive(b.widthCm, 35),
+      lengthCm: positive(b.lengthCm, 50),
+      approxBooks: Math.round(positive(b.approxBooks, 10)),
+      maxKg: positive(b.maxKg, 5),
       pricePaise: Math.round(pricePaise),
-      grams: Number.isFinite(Number(b.grams)) && Number(b.grams) > 0 ? Math.round(Number(b.grams)) : Math.round((Number.isFinite(maxKg) ? maxKg : 5) * 800),
+      packedCm: [positive(packed[0], 40), positive(packed[1], 30), positive(packed[2], 20)],
+      tareGrams: Math.round(positive(b.tareGrams, 220)),
     });
   }
   return out;
@@ -106,19 +116,15 @@ export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
 
-    if (body.buckets !== undefined) {
-      const buckets = sanitizeBuckets(body.buckets);
-      if (!buckets) {
-        return NextResponse.json({ error: "Invalid pricing configuration" }, { status: 400 });
+    if (body.bags !== undefined) {
+      const bags = sanitizeBags(body.bags);
+      if (!bags) {
+        return NextResponse.json(
+          { error: "Every bag needs a price and a unique ID" },
+          { status: 400 },
+        );
       }
-      await setBuckets(buckets);
-    }
-    if (body.countBuckets !== undefined) {
-      const countBuckets = sanitizeBuckets(body.countBuckets);
-      if (!countBuckets) {
-        return NextResponse.json({ error: "Invalid book-count configuration" }, { status: 400 });
-      }
-      await setCountBuckets(countBuckets);
+      await setBags(bags);
     }
     if (body.genres !== undefined) {
       const genres = sanitizeGenres(body.genres);

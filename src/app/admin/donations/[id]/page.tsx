@@ -8,7 +8,7 @@ import Link from "next/link";
 import { AdminShell } from "../../layout";
 import DonationStatusUpdate from "@/components/DonationStatusUpdate";
 import FulfilPickupButton from "@/components/FulfilPickupButton";
-import { getBuckets, findBucket } from "@/lib/settings";
+import { getBags, findBag, bagLabel } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +37,8 @@ export default async function DonationDetailPage({
 
   const shipment = donationShipments.length > 0 ? donationShipments[0] : null;
 
-  const bucket = findBucket(await getBuckets(), donation.weightBucket);
+  const bags = await getBags();
+  const bucket = findBag(bags, donation.weightBucket);
 
   let photos: string[] = [];
   try {
@@ -69,9 +70,10 @@ export default async function DonationDetailPage({
             <h1 className="text-2xl font-bold text-gray-900">
               {donation.title || `${bucket?.label ?? donation.weightBucket} of ${donation.category}`}
             </h1>
-            <p className="text-gray-500 text-sm mt-1 capitalize">
+            <p className="text-gray-500 text-sm mt-1">
               {donation.category}
-              {bucket ? ` · ${bucket.label} (up to ${bucket.maxKg} kg)` : ` · ${donation.weightBucket}`}
+              {` · ${bagLabel(bags, donation.weightBucket)}`}
+              {bucket ? `, up to ${bucket.maxKg} kg` : ""}
               {donation.condition ? ` · ${donation.condition.replace("_", " ")}` : ""}
             </p>
           </div>

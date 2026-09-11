@@ -34,7 +34,7 @@ off as soon as real Razorpay keys are present.
 
 ## How the donation flow works
 
-1. `/donate` — category, photos, size (by book count or by weight), donor details.
+1. `/donate` — category, photos, bag size (three physical kraft sacks), donor details.
 2. `POST /api/donate` — prices the booking server-side, creates the donation as
    `pending_payment` and opens a Razorpay order.
 3. Razorpay checkout, then `POST /api/shipping/verify`.
@@ -43,7 +43,7 @@ off as soon as real Razorpay keys are present.
    are idempotent.
 5. Admin posts the bag, the donor confirms on WhatsApp, admin books the courier.
 
-Pricing, daily caps, site copy and book categories are all admin-editable and
+Bag sizes and prices, daily caps, site copy and book categories are all admin-editable and
 stored in the `settings` table — no deploy needed to change them.
 
 ## Schema changes
