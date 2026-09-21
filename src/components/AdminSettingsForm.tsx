@@ -256,7 +256,7 @@ export default function AdminSettingsForm({
         <div className="space-y-5 max-w-md">
           <p className="text-sm text-gray-500">
             Maximum paid pickups accepted per period. Set a value to <strong>0</strong> for no limit. When any
-            limit is reached, the donate page switches to a waiting-list form instead of payment.
+            limit is reached, the public form switches to a waiting list instead of taking payment.
           </p>
           {(["daily", "weekly", "monthly"] as (keyof Caps)[]).map((k) => (
             <Labeled key={k} label={`Per ${k.replace("ly", "")}${k === "daily" ? "" : ""} (${k})`}>
@@ -270,7 +270,7 @@ export default function AdminSettingsForm({
             </Labeled>
           ))}
           <p className="text-xs text-gray-400">
-            Weeks start on Monday (IST). Only paid donations count — abandoned checkouts and
+            Weeks start on Monday (IST). Only paid pickups count — abandoned checkouts and
             cancellations don&apos;t use up a slot.
           </p>
 

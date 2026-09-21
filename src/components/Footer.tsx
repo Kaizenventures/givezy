@@ -12,7 +12,7 @@ export default function Footer() {
           <div>
             <h3 className="font-bold text-emerald-600 text-xl mb-3">Givezy</h3>
             <p className="text-gray-500 text-sm leading-relaxed">
-              Donate books and clothes in Hyderabad with doorstep pickup.
+              Give books and clothes a second life in Hyderabad, with doorstep pickup.
               Give your pre-loved items a second life.
             </p>
           </div>
@@ -21,7 +21,7 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm">
               <li>
                 <Link href="/donate" className="text-gray-500 hover:text-emerald-600 transition-colors">
-                  Donate Items
+                  Give Books
                 </Link>
               </li>
               <li>

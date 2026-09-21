@@ -50,7 +50,7 @@ export default async function DonationDetailPage({
   if (photos.length === 0 && donation.imageUrl) photos = [donation.imageUrl];
 
   const fulfilBlockedReason =
-    !shipment ? "No payment record for this donation."
+    !shipment ? "No payment record for this pickup."
     : shipment.paymentStatus !== "paid" ? "Book the pickup once payment has cleared."
     : shipment.shiprocketOrderId ? "A Shiprocket pickup already exists."
     : null;

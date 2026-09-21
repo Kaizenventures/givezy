@@ -4,7 +4,7 @@ import AboutContent from "@/components/AboutContent";
 export const metadata = buildMetadata({
   title: "About",
   description:
-    "Givezy is a Hyderabad-based initiative that makes donating books and clothes effortless with doorstep pickup.",
+    "Givezy is a Hyderabad-based initiative that makes giving books and clothes away effortless, with doorstep pickup.",
 });
 
 export default function AboutPage() {

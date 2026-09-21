@@ -33,7 +33,7 @@ export default async function DonationsListPage({
   return (
     <AdminShell>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">All Donations</h1>
+        <h1 className="text-2xl font-bold text-gray-900">All pickups</h1>
         <span className="text-sm text-gray-500">{filtered.length} results</span>
       </div>
 
@@ -73,7 +73,7 @@ export default async function DonationsListPage({
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-gray-500 text-sm">No donations found.</p>
+        <p className="text-gray-500 text-sm">No pickups found.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

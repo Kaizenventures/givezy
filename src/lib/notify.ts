@@ -91,7 +91,7 @@ export async function notifyAdminOfDonation(d: DonationNotice): Promise<void> {
   ];
 
   const html = layout(
-    d.isDemo ? "New DEMO donation" : "New donation paid",
+    d.isDemo ? "New DEMO pickup" : "New pickup paid",
     `<table style="width:100%;border-collapse:collapse;font-size:14px">${rows
       .map(
         ([k, v]) =>
@@ -106,7 +106,7 @@ export async function notifyAdminOfDonation(d: DonationNotice): Promise<void> {
 
   await send(
     ADMIN_NOTIFY_EMAIL,
-    `${d.isDemo ? "[DEMO] " : ""}New Givezy donation — ${d.donorName} (${amount})`,
+    `${d.isDemo ? "[DEMO] " : ""}New Givezy pickup — ${d.donorName} (${amount})`,
     html,
     text,
   );

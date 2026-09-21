@@ -21,7 +21,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <span className="font-semibold text-sm whitespace-nowrap">Givezy Admin</span>
             {[
               { href: "/admin", label: "Today" },
-              { href: "/admin/donations", label: "Donations" },
+              { href: "/admin/donations", label: "Pickups" },
               { href: "/admin/recovery", label: "Follow-ups" },
               { href: "/admin/waitlist", label: "Waitlist" },
               { href: "/admin/payments", label: "Payments" },
@@ -45,7 +45,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       {isDemoMode() && (
         <div className="bg-amber-100 border-b-2 border-amber-400">
           <div className="max-w-6xl mx-auto px-4 py-2.5 text-sm text-amber-900">
-            <strong>Demo mode is on.</strong> Donations are recorded as paid without any real payment.
+            <strong>Demo mode is on.</strong> Pickups are recorded as paid without any real payment.
             Set <code className="bg-amber-200 px-1 rounded">DEMO_MODE=false</code> (or add live Razorpay
             keys) before taking real donations.
           </div>

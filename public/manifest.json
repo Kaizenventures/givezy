@@ -1,7 +1,7 @@
 {
-  "name": "Givezy — Donate Books & Clothes in Hyderabad",
+  "name": "Givezy — Give Books & Clothes in Hyderabad",
   "short_name": "Givezy",
-  "description": "Donate books and clothes in Hyderabad with free doorstep pickup.",
+  "description": "Give books and clothes a second life in Hyderabad, with doorstep pickup.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

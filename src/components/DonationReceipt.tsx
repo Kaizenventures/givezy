@@ -28,7 +28,7 @@ export default function DonationReceipt({ data }: { data: ReceiptData }) {
     ["Phone", data.donorPhone],
     ...(data.donorEmail ? ([["Email", data.donorEmail]] as [string, string][]) : []),
     ["Pickup address", [data.address, data.city, data.pincode].filter(Boolean).join(", ")],
-    ["Donation size", `${data.sizeLabel} (up to ${data.maxKg} kg)`],
+    ["Bag size", `${data.sizeLabel} (up to ${data.maxKg} kg)`],
     ...(data.genres.length ? ([["Categories", data.genres.join(", ")]] as [string, string][]) : []),
   ];
 

@@ -39,7 +39,7 @@ export default function Header() {
             href="/donate"
             className="bg-emerald-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-all hover:shadow-md hover:shadow-emerald-200"
           >
-            Donate Now
+            Give Now
           </Link>
         </div>
 
@@ -68,7 +68,7 @@ export default function Header() {
             onClick={() => setMenuOpen(false)}
             className="block bg-emerald-600 text-white text-center px-5 py-2.5 rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
           >
-            Donate Now
+            Give Now
           </Link>
         </div>
       )}

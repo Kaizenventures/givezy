@@ -70,7 +70,7 @@ export default function HomeContent({ content }: { content: SiteContent }) {
                   href="/donate"
                   className="inline-flex items-center justify-center gap-2 bg-emerald-600 text-white px-8 py-3.5 rounded-xl font-semibold text-lg hover:bg-emerald-700 transition-all hover:shadow-lg hover:shadow-emerald-200"
                 >
-                  Donate Now
+                  Give Now
                   <ArrowRight className="w-5 h-5" />
                 </Link>
                 <a
@@ -115,7 +115,7 @@ export default function HomeContent({ content }: { content: SiteContent }) {
               {content.getStartedTitle}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
-              What can you donate?
+              What can you give?
             </h2>
           </AnimatedSection>
 
@@ -145,7 +145,7 @@ export default function HomeContent({ content }: { content: SiteContent }) {
                   <p className="mt-2 text-gray-500 leading-relaxed">{cat.description}</p>
                   {!comingSoon && (
                     <span className="inline-flex items-center gap-1 mt-4 text-sm font-semibold text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                      Donate {cat.name.toLowerCase()} <ArrowRight className="w-4 h-4" />
+                      Give {cat.name.toLowerCase()} <ArrowRight className="w-4 h-4" />
                     </span>
                   )}
                 </>
@@ -191,7 +191,7 @@ export default function HomeContent({ content }: { content: SiteContent }) {
                 href="/donate"
                 className="inline-flex items-center gap-2 mt-8 bg-white text-emerald-700 px-8 py-3.5 rounded-xl font-bold text-lg hover:bg-emerald-50 transition-all hover:shadow-lg"
               >
-                Donate Now
+                Give Now
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </AnimatedSection>

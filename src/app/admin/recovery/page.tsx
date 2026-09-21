@@ -19,7 +19,7 @@ export default async function RecoveryPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Follow-ups</h1>
       <p className="text-sm text-gray-500 mb-6 max-w-2xl">
         These people typed in their full name, phone and home address, then stopped at the payment
-        screen. They wanted to donate — usually something small got in the way. One WhatsApp message
+        screen. They wanted to give — usually something small got in the way. One WhatsApp message
         recovers a good share of them. Anyone who started in the last {ABANDONED_AFTER_MINUTES} minutes
         is hidden, since they may still be paying.
       </p>

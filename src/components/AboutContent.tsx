@@ -27,7 +27,7 @@ const VALUES = [
   {
     icon: BookOpen,
     title: "Education matters",
-    description: "Books are knowledge. A donated textbook can change the trajectory of a child's future.",
+    description: "Books are knowledge. A textbook you pass on can change the trajectory of a child's future.",
     color: "text-amber-600",
     bg: "bg-amber-50",
   },
@@ -61,7 +61,7 @@ export default function AboutContent() {
               <div className="space-y-4 text-gray-600 leading-relaxed">
                 <p>
                   Givezy started with a simple observation: most people in Hyderabad have books
-                  they&apos;ve finished reading and clothes they no longer wear, but donating them
+                  they&apos;ve finished reading and clothes they no longer wear, but passing them on
                   feels like a chore.
                 </p>
                 <p>
@@ -156,7 +156,7 @@ export default function AboutContent() {
               href="/donate"
               className="inline-flex items-center gap-2 bg-white text-emerald-700 px-8 py-3.5 rounded-xl font-bold text-lg hover:bg-emerald-50 transition-all hover:shadow-lg"
             >
-              Donate Now
+              Give Now
               <ArrowRight className="w-5 h-5" />
             </Link>
           </AnimatedSection>

@@ -43,15 +43,15 @@ export default async function LocalitiesPage() {
 
   return (
     <AdminShell>
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Where donations come from</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">Where books come from</h1>
       <p className="text-sm text-gray-500 mb-8 max-w-2xl">
-        Which parts of Hyderabad are actually donating. Useful for spotting clusters — if one pincode
+        Which parts of Hyderabad are actually giving. Useful for spotting clusters — if one pincode
         keeps coming up, that&apos;s where a single van run would collect the most in one trip.
         Unpaid and cancelled bookings are excluded.
       </p>
 
       {real.length === 0 ? (
-        <p className="text-gray-500 text-sm">No donations yet.</p>
+        <p className="text-gray-500 text-sm">Nothing collected yet.</p>
       ) : (
         <div className="grid md:grid-cols-2 gap-8">
           <ClusterTable title="By pincode" heading="Pincode" clusters={byPincode} linkKey="pincode" />

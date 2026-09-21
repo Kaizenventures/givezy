@@ -1,6 +1,6 @@
 # Givezy Admin — How To Run It
 
-A guide for whoever is handling day-to-day donations. No technical knowledge needed.
+A guide for whoever is handling day-to-day pickups. No technical knowledge needed.
 
 **Log in at:** https://givezy.in/admin/login
 
@@ -15,7 +15,7 @@ there's nothing to do in it.
 
 ---
 
-## How a donation works, start to finish
+## How a pickup works, start to finish
 
 1. Someone fills in the form on givezy.in and pays the pickup fee.
 2. **You post them an empty de-clutter bag** in the size they chose.
@@ -38,7 +38,7 @@ written — you can edit it before sending, or just send it.
 
 ### "Book the courier"
 They've told us their bag is packed. Press **Book Shiprocket pickup** and the
-courier is arranged automatically. You'll see a confirmation, and the donation
+courier is arranged automatically. You'll see a confirmation, and the pickup
 moves to "Out for pickup".
 
 If the button is greyed out, the reason is written underneath it.
@@ -68,7 +68,7 @@ The courier has it. Press **Received** once it reaches us.
 
 | Page | What it's for |
 |---|---|
-| **Donations** | Every donation ever, with filters. Use this to look something up. |
+| **Pickups** | Every pickup ever, with filters. Use this to look something up. |
 | **Follow-ups** | The full list of people who didn't finish paying. |
 | **Waitlist** | People who tried to book when we were full. Call them when slots free up and mark them Invited or Converted. |
 | **Payments** | Money collected, how people paid, and any payments that failed. |
@@ -125,7 +125,7 @@ steps, and the message people see when you're full. Save and it's live.
 
 ## Things worth knowing
 
-**Someone paid but says they got no bag.** Find them under Donations, check the
+**Someone paid but says they got no bag.** Find them under Pickups, check the
 status. If it still says "Paid", the bag hasn't been posted yet.
 
 **A payment failed.** Payments page shows the reason. "Insufficient funds" or a
@@ -136,7 +136,7 @@ at pickup. There's no automatic way to charge the difference — call them, or
 absorb it if it's small.
 
 **The demo banner is showing.** The site is in demo mode and no real money is
-being taken. That's for testing only — it must be off before real donations.
+being taken. That's for testing only — it must be off before real pickups.
 
 **Never share your login.** It gives access to every donor's home address and
 phone number.

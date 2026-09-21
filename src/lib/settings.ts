@@ -119,21 +119,21 @@ export const DEFAULT_CONTENT: SiteContent = {
   clothesComingSoon: true,
   howItWorks: [
     "Fill in a quick form — pick a category and snap a picture.",
-    "Estimate the total weight and select your bag size.",
+    "Pick the bag size that fits your books.",
     "Pay for the pickup.",
     "We send you a de-clutter bag.",
-    "You pack it and send the bag back to us.",
+    "Pack it, message us, and the courier collects it.",
   ],
   nextStepTitle: "The Next Step",
   nextStepBody:
     "You will now receive a de-clutter bag from Givezy. Once you receive it, pack it up to the weight you selected. Once done, please ping us on WhatsApp for the pickup.",
   whatsappNumber: "",
-  leadPopupTitle: "Not ready to donate yet?",
+  leadPopupTitle: "Not ready to give yet?",
   leadPopupBody:
     "Leave your details and we'll remind you when we're picking up in your area.",
   leadPopupDelaySeconds: 7,
   // Reaching the cap is good news — say so, rather than turning people away flat.
-  capMessageTitle: "So many donations today that we're full!",
+  capMessageTitle: "So many books given today that we're full!",
   capMessageBody:
     "Hyderabad has been generous today and every pickup slot is taken. Leave your details and you'll go straight to the front of tomorrow's queue — no payment needed now.",
 };

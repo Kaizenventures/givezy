@@ -37,7 +37,7 @@ export default function SuccessContent({
   const waNumber = content?.whatsappNumber?.replace(/[^\d]/g, "") || "";
   const waMessage = encodeURIComponent(
     donationId
-      ? `Hi Givezy! My de-clutter bag is packed and ready for pickup. Donation ref: ${donationId.slice(0, 8)}`
+      ? `Hi Givezy! My de-clutter bag is packed and ready for pickup. Ref: ${donationId.slice(0, 8)}`
       : "Hi Givezy! My de-clutter bag is packed and ready for pickup.",
   );
 

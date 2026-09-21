@@ -58,7 +58,7 @@ export default function ImpactStats() {
             The reality
           </motion.p>
           <motion.h2 variants={fadeInUp} className="text-3xl md:text-4xl font-bold text-gray-900">
-            Why your donation matters
+            Why your books matter
           </motion.h2>
         </motion.div>
 

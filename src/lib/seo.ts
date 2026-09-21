@@ -3,12 +3,12 @@ import type { Metadata } from "next";
 const SITE_NAME = "Givezy";
 const SITE_URL = "https://givezy.in";
 const SITE_DESCRIPTION =
-  "Donate books and clothes in Hyderabad with doorstep pickup. Give your pre-loved items a second life — we collect from your home.";
+  "Pass on books and clothes in Hyderabad with doorstep pickup. Give your pre-loved items a second life — we collect from your home.";
 
 export function buildMetadata(overrides: Partial<Metadata> = {}): Metadata {
   const title = overrides.title
     ? `${overrides.title} | ${SITE_NAME}`
-    : `${SITE_NAME} — Donate Books & Clothes in Hyderabad | Doorstep Pickup`;
+    : `${SITE_NAME} — Give Books & Clothes in Hyderabad | Doorstep Pickup`;
 
   const description =
     (overrides.description as string) || SITE_DESCRIPTION;
@@ -29,7 +29,7 @@ export function buildMetadata(overrides: Partial<Metadata> = {}): Metadata {
           url: `${SITE_URL}/og-image.png`,
           width: 1200,
           height: 630,
-          alt: "Givezy — Donate Books & Clothes in Hyderabad with Doorstep Pickup",
+          alt: "Givezy — Give Books & Clothes in Hyderabad with Doorstep Pickup",
         },
       ],
     },
@@ -71,7 +71,7 @@ export function organizationJsonLd() {
         },
       },
     },
-    serviceType: "Donation Pickup",
+    serviceType: "Book Pickup",
   };
 }
 
@@ -79,7 +79,7 @@ export function localBusinessJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
-    name: `${SITE_NAME} — Donation Pickup Hyderabad`,
+    name: `${SITE_NAME} — Book Pickup Hyderabad`,
     url: SITE_URL,
     description: SITE_DESCRIPTION,
     address: {

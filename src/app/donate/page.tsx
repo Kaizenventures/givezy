@@ -3,9 +3,9 @@ import DonationForm from "@/components/DonationForm";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
-  title: "Donate",
+  title: "Give",
   description:
-    "Donate books and clothes in Hyderabad. Fill a quick form, pick a bag size, and we'll collect from your doorstep.",
+    "Give books and clothes in Hyderabad. Fill a quick form, pick a bag size, and we'll collect from your doorstep.",
 });
 
 export default function DonatePage() {

@@ -29,7 +29,7 @@ export default async function AdminDashboard() {
         </p>
       </div>
       <p className="text-sm text-gray-500 mb-8">
-        Work down this list top to bottom. Everything else lives under Donations.
+        Work down this list top to bottom. Everything else lives under Pickups.
       </p>
 
       {todoCount === 0 && work.awaitingDonor.length === 0 && work.inTransit.length === 0 && (
@@ -191,7 +191,7 @@ function Section({
         <p className="text-xs text-gray-400 mt-2">
           + {items.length - 3} more —{" "}
           <Link href="/admin/donations" className="text-emerald-600 hover:underline">
-            see all donations
+            see all pickups
           </Link>
         </p>
       )}

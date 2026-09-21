@@ -108,7 +108,7 @@ export default function DonationForm() {
         setConfig(data);
         if (data.bags?.length) setBucketId(data.bags[0].id);
       })
-      .catch(() => setError("Could not load donation options. Please refresh."))
+      .catch(() => setError("Could not load the bag options. Please refresh."))
       .finally(() => setLoadingConfig(false));
   }, []);
 
@@ -341,7 +341,7 @@ export default function DonationForm() {
         <div className="mb-6 p-4 bg-amber-100 border-2 border-amber-400 rounded-xl">
           <p className="font-bold text-amber-900 text-sm">⚠️ Demo mode — no real payment</p>
           <p className="text-amber-800 text-sm mt-1">
-            Payments aren&apos;t connected yet. Submitting this form records a test donation and skips
+            Payments aren&apos;t connected yet. Submitting this form records a test booking and skips
             checkout entirely. Nothing is charged and no pickup will happen.
           </p>
         </div>
@@ -361,7 +361,7 @@ export default function DonationForm() {
       )}
 
       {/* Category */}
-      <h2 className="text-xl font-bold text-gray-900 mb-1">What are you donating today?</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-1">What are you giving today?</h2>
       <p className="text-gray-500 text-sm mb-5">Books today — clothes are on the way.</p>
 
       <div className="grid grid-cols-2 gap-3 mb-8">
@@ -418,7 +418,7 @@ export default function DonationForm() {
               className="relative aspect-square rounded-xl overflow-hidden border border-gray-200"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.preview} alt={`Donation photo ${i + 1}`} className="w-full h-full object-cover" />
+              <img src={p.preview} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
               <button
                 onClick={() => removePhoto(i)}
                 aria-label={`Remove photo ${i + 1}`}
