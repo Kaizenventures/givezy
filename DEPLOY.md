@@ -56,13 +56,19 @@ free -h
 
 ## CI/CD (Auto-Deploy on Push)
 
-> **Status: NOT WORKING.** The `DROPLET_IP` and `SSH_PRIVATE_KEY` secrets have
-> never been added, so every run fails immediately with
-> `error: missing server host`. Until step 3 below is done, pushing to `main`
-> does **not** update the server — deploy manually with the command under
-> "Manual deploy" above.
+Every push to `main` deploys automatically, and a deploy can also be re-run from
+the Actions tab without making an empty commit.
 
-Once set up, every push to `main` auto-deploys. One-time setup:
+**Secrets** (`DROPLET_IP`, `SSH_PRIVATE_KEY`) are configured. The private half of
+the deploy key lives on the machine it was generated on, at `~/.ssh/givezy-deploy`;
+the public half is in the droplet's `~/.ssh/authorized_keys`.
+
+The workflow clears logs and Docker build cache before building, because the
+10 GB disk has twice filled mid-build and taken the site down. It checks the app
+answers on port 3000 afterwards, so a broken deploy fails the run rather than
+reporting success.
+
+To regenerate the deploy key:
 
 ### 1. Generate an SSH key for GitHub Actions
 On your local machine (NOT the droplet):

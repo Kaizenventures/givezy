@@ -3,6 +3,8 @@ name: Deploy to Production
 on:
   push:
     branches: [main]
+  # Lets a deploy be re-run from the Actions tab without an empty commit
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -14,9 +16,32 @@ jobs:
           host: ${{ secrets.DROPLET_IP }}
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # A clean build takes 7-8 minutes on this droplet; the 10m default cuts it fine
+          command_timeout: 20m
           script: |
+            set -euo pipefail
             cd ~/givezy
-            git pull origin main
+
+            # The droplet has a 10 GB disk and has twice run out mid-build.
+            # Reclaim logs and build cache first; neither is needed to run the app.
+            journalctl --vacuum-size=50M || true
+            docker builder prune -af || true
+
+            # reset rather than pull: a previous deploy died mid-fetch and left the
+            # checkout in a state plain `git pull` could not resolve. .env is
+            # untracked and is not touched by this.
+            git fetch --prune origin main
+            git reset --hard origin/main
+
             docker compose down
             docker compose up -d --build
-            echo "Deployed at $(date)"
+
+            # Drop the superseded image so the disk does not creep up each deploy
+            docker image prune -f || true
+
+            # Fail loudly if the container came up broken, rather than reporting success
+            sleep 10
+            curl -fsS -o /dev/null --retry 5 --retry-delay 5 http://localhost:3000/api/config
+
+            echo "Deployed $(git rev-parse --short HEAD) at $(date)"
+            df -h / | tail -1
