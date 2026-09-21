@@ -39,9 +39,12 @@ jobs:
             # Drop the superseded image so the disk does not creep up each deploy
             docker image prune -f || true
 
-            # Fail loudly if the container came up broken, rather than reporting success
-            sleep 10
-            curl -fsS -o /dev/null --retry 5 --retry-delay 5 http://localhost:3000/api/config
+            # Fail loudly if the container came up broken, rather than reporting success.
+            # The app runs migrations and seeds before Next starts, which on this
+            # droplet takes well over a minute, and curl's plain --retry ignores the
+            # connection resets you get while it is still booting.
+            sleep 45
+            curl -fsS -o /dev/null --retry 10 --retry-delay 10 --retry-all-errors --max-time 30 http://localhost:3000/api/config
 
             echo "Deployed $(git rev-parse --short HEAD) at $(date)"
             df -h / | tail -1
