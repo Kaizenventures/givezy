@@ -37,12 +37,13 @@ jobs:
             test -f server.js || { echo "server.js missing — standalone output not copied"; exit 1; }
             command -v drizzle-kit > /dev/null || { echo "drizzle-kit missing"; exit 1; }
             command -v tsx > /dev/null || { echo "tsx missing"; exit 1; }
-            node -e "require.resolve(\"@libsql/client\")" || { echo "@libsql/client not traced into standalone"; exit 1; }
-            node -e "require.resolve(\"bcryptjs\")" || { echo "bcryptjs not traced into standalone"; exit 1; }
-            node -e "require.resolve(\"drizzle-orm\")" || { echo "drizzle-orm not traced into standalone"; exit 1; }
+            for m in @libsql/client bcryptjs drizzle-orm; do
+              test -d "node_modules/$m" || { echo "$m not traced into standalone"; exit 1; }
+            done
             echo "entrypoint prerequisites present"
           '
 
+      # Runs the real entrypoint: migrations, then the seed, then the server
       - name: Boot the container and check it answers
         run: |
           docker run -d --name check -p 3000:3000 -e NEXTAUTH_SECRET=ci-only-not-a-real-secret givezy-app:check
