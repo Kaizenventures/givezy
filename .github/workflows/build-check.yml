@@ -35,7 +35,8 @@ jobs:
             set -e
             export PATH="/opt/tools/node_modules/.bin:$PATH"
             test -f server.js || { echo "server.js missing — standalone output not copied"; exit 1; }
-            command -v drizzle-kit > /dev/null || { echo "drizzle-kit missing"; exit 1; }
+            test -f scripts/migrate.mjs || { echo "migration script missing"; exit 1; }
+            ls drizzle/*.sql > /dev/null 2>&1 || { echo "no migrations shipped in the image"; exit 1; }
             command -v tsx > /dev/null || { echo "tsx missing"; exit 1; }
             for m in @libsql/client bcryptjs drizzle-orm; do
               test -d "node_modules/$m" || { echo "$m not traced into standalone"; exit 1; }
