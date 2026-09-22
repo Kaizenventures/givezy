@@ -20,11 +20,12 @@ RUN npm run build
 # ---- migration tooling ----
 # Installed separately rather than into the app's node_modules: the standalone
 # bundle is traced from the server's imports, and an npm install inside it could
-# prune something the server needs.
+# prune something the server needs. drizzle-orm is here too because drizzle-kit
+# resolves it relative to itself, not to the app.
 FROM node:20-alpine AS tools
 WORKDIR /tools
 RUN npm init -y > /dev/null \
-    && npm install --no-package-lock --omit=optional drizzle-kit@^0.31.9 tsx@^4.21.0 \
+    && npm install --no-package-lock --omit=optional drizzle-kit@^0.31.9 drizzle-orm@^0.45.1 tsx@^4.21.0 \
     && npm cache clean --force
 
 # ---- run ----
