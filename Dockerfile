@@ -27,7 +27,7 @@ WORKDIR /tools
 RUN npm init -y > /dev/null \
     # No --omit=optional: @libsql/client ships its native bindings as optional
     # platform dependencies, and without them drizzle-kit reports it as missing
-    && npm install --no-package-lock drizzle-kit@^0.31.9 drizzle-orm@^0.45.1 @libsql/client@^0.17.0 tsx@^4.21.0 \
+    && npm install --no-package-lock drizzle-kit@^0.31.9 drizzle-orm@^0.45.1 @libsql/client@^0.17.0 bcryptjs@^3.0.3 tsx@^4.21.0 \
     && npm cache clean --force
 
 # ---- run ----
@@ -46,6 +46,14 @@ COPY --from=builder /app/public ./public
 
 # Needed by the entrypoint before the server starts
 COPY --from=tools /tools/node_modules /opt/tools/node_modules
+
+# Next traces only the files the server itself imports, which leaves these
+# packages incomplete for a separate process: the seed resolves
+# drizzle-orm/libsql and fails on a subpath tracing never copied. Complete
+# copies are a superset, so the server is unaffected.
+COPY --from=tools /tools/node_modules/drizzle-orm ./node_modules/drizzle-orm
+COPY --from=tools /tools/node_modules/@libsql ./node_modules/@libsql
+COPY --from=tools /tools/node_modules/bcryptjs ./node_modules/bcryptjs
 COPY drizzle ./drizzle
 COPY drizzle.config.ts tsconfig.json ./
 COPY src ./src
