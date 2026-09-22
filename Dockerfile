@@ -25,7 +25,9 @@ RUN npm run build
 FROM node:20-alpine AS tools
 WORKDIR /tools
 RUN npm init -y > /dev/null \
-    && npm install --no-package-lock --omit=optional drizzle-kit@^0.31.9 drizzle-orm@^0.45.1 @libsql/client@^0.17.0 tsx@^4.21.0 \
+    # No --omit=optional: @libsql/client ships its native bindings as optional
+    # platform dependencies, and without them drizzle-kit reports it as missing
+    && npm install --no-package-lock drizzle-kit@^0.31.9 drizzle-orm@^0.45.1 @libsql/client@^0.17.0 tsx@^4.21.0 \
     && npm cache clean --force
 
 # ---- run ----
