@@ -39,6 +39,7 @@ jobs:
             command -v tsx > /dev/null || { echo "tsx missing"; exit 1; }
             node -e "require.resolve(\"@libsql/client\")" || { echo "@libsql/client not traced into standalone"; exit 1; }
             node -e "require.resolve(\"bcryptjs\")" || { echo "bcryptjs not traced into standalone"; exit 1; }
+            node -e "require.resolve(\"drizzle-orm\")" || { echo "drizzle-orm not traced into standalone"; exit 1; }
             echo "entrypoint prerequisites present"
           '
 
