@@ -30,8 +30,8 @@ Steps 2 and 4 are the only bits that need you. The website handles the rest.
 ## The Today page
 
 ### "Post a de-clutter bag"
-They've paid. Each entry shows which bag they chose — small, medium or large. Post
-that size to the address shown, then press **Bag posted**.
+They've paid. Each entry shows which bag they chose — there is only one size at
+the moment. Post it to the address shown, then press **Bag posted**.
 
 The WhatsApp button next to each person opens a chat with a message already
 written — you can edit it before sending, or just send it.
@@ -83,7 +83,7 @@ The courier has it. Press **Received** once it reaches us.
 | **Payments** | Money collected, how people paid, and any payments that failed. |
 | **Areas** | Which parts of Hyderabad are donating most. |
 | **Leads** | People who left their details but haven't donated yet. |
-| **Settings** | Prices, daily limits, and the words on the website. |
+| **Settings** | Bags and prices, where you collect from, daily limits, and the words on the website. |
 | **Export** | Downloads a spreadsheet. Add `?type=leads` or `?type=waitlist` to the address for those instead. |
 
 ---
@@ -102,6 +102,26 @@ Set it to **0** for no limit.
 You can see how full today is at the bottom of the Today page.
 
 ---
+
+## Where you collect from
+
+**Settings → Service area.** Drag the pin to where pickups start from, set how
+far out you'll travel, and save.
+
+Anyone whose pincode falls outside that circle never sees a payment screen. They
+get the waiting list instead, so you never take money for a collection you can't
+make. Leave the tick box off and every address is accepted, wherever it is.
+
+Underneath there's **Test a pincode** — type a real one and it tells you whether
+that booking would go through, and how far away it is. Worth trying a few edges
+before you trust a radius. It checks the *saved* area, so save first.
+
+Two things to know:
+
+- Distance is measured in a straight line to the centre of the giver's pincode,
+  so treat it as approximate near the edge.
+- If the lookup service is ever unreachable, bookings are let through rather than
+  blocked. An outage shouldn't stop your business.
 
 ## Bags and prices
 
@@ -144,8 +164,14 @@ bank decline usually just needs them to try again with a different method.
 at pickup. There's no automatic way to charge the difference — call them, or
 absorb it if it's small.
 
-**The demo banner is showing.** The site is in demo mode and no real money is
-being taken. That's for testing only — it must be off before real pickups.
+**The demo banner is showing.** The site is in demo mode: the give page says so,
+and no money can be taken. That's deliberate while payments are being set up. It
+switches itself off as soon as real payment keys are added, so you can't
+accidentally go live with it on.
+
+**Someone says we don't reach them, but we do.** Check Settings → Service area
+and test their pincode. The radius may be too tight, or their pincode may not be
+one the map knows.
 
 **Never share your login.** It gives access to every donor's home address and
 phone number.

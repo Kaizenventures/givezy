@@ -27,19 +27,21 @@ cd ~/givezy && docker compose logs -f app
 cd ~/givezy && docker compose logs app --tail 50
 ```
 
-### Manual deploy (if CI/CD isn't set up yet)
+### Deploy by hand (normally GitHub Actions does this)
 ```bash
-cd ~/givezy && git pull origin main && docker compose down && docker compose up -d --build
+cd ~/givezy && git pull origin main && docker compose pull app && docker compose up -d
 ```
 
-### Restart without rebuilding
+### After editing .env
+A restart is **not** enough — a container keeps the environment it was created
+with. Recreate it:
 ```bash
-cd ~/givezy && docker compose restart
+cd ~/givezy && docker compose up -d --force-recreate app
 ```
 
-### Backup database
+### Back up right now
 ```bash
-docker cp givezy-app-1:/app/data/givezy.db ~/givezy-backup-$(date +%F).db
+/root/givezy/scripts/backup.sh && ls -lh /root/backups
 ```
 
 ### Check disk space
@@ -79,6 +81,16 @@ cd ~/givezy && docker build -t ghcr.io/kaizenventures/givezy-app:latest . && doc
 **Secrets** (`DROPLET_IP`, `SSH_PRIVATE_KEY`) are configured. The registry is
 authenticated with each run's own short-lived token, so no long-lived credential
 sits on the droplet.
+
+### Build check
+
+Branches and pull requests run `build-check.yml`: it builds the image, boots it,
+and waits for it to answer on port 3000. It does not deploy.
+
+This exists because a Dockerfile change once reached `main` and broke the build
+there. A working checkout hides problems that only a clean container finds — a
+missing directory, a package Next inlined rather than shipped, a config that
+cannot resolve its own tooling. If that check is red, do not merge.
 
 To regenerate the deploy key:
 
@@ -138,7 +150,9 @@ Local backups protect against a bad migration or a corrupted database. They do
 of every booking, every giver's address and every photo. Two ways to fix that:
 
 - **DigitalOcean snapshots** — enable weekly backups on the droplet in the DO
-  control panel. No keys, a couple of clicks, roughly $1–2/month.
+  control panel. No keys, a couple of clicks, roughly $1–2/month. Weekly means
+  up to seven days of bookings could be lost, so it is a floor rather than a
+  target once real money is moving.
 - **Off-box copies** — install `rclone`, configure a bucket, and set
   `BACKUP_REMOTE` in the crontab entry. The script already handles it.
 
@@ -168,7 +182,7 @@ Set these in `~/givezy/.env` on the droplet.
 - Secret: the same value as `RAZORPAY_WEBHOOK_SECRET`
 
 Without the webhook, a donor who closes the tab immediately after paying leaves a
-captured payment attached to an unpaid donation, with nothing to reconcile it.
+captured payment attached to an unpaid booking, with nothing to reconcile it.
 
 ### Shipping (add when Shiprocket access arrives)
 `SHIPROCKET_EMAIL`, `SHIPROCKET_PASSWORD`, plus the `PICKUP_*` warehouse address
@@ -177,18 +191,18 @@ used as the shipping destination.
 ### Demo mode
 | Variable | Notes |
 |---|---|
-| `DEMO_MODE` | `true` skips checkout and records donations as paid |
+| `DEMO_MODE` | `true` skips checkout and records bookings as paid |
 
 Demo mode requires `DEMO_MODE=true` **and** the absence of `RAZORPAY_KEY_ID`.
 Adding real keys disables it automatically, so it cannot silently give away free
-pickups. It shows a warning banner on the donate page, the thank-you page and
+pickups. It shows a warning banner on the give page, the thank-you page and
 throughout the admin panel. Demo payments are stored with a `demo_` payment id.
 
 ### Email (optional — no-ops when unset)
 `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`,
-`ADMIN_NOTIFY_EMAIL`. When configured, a paid donation emails both the donor
+`ADMIN_NOTIFY_EMAIL`. When configured, a paid booking emails both the giver
 (confirmation and next steps) and the team. Mail failures are logged and never
-block a donation.
+block a booking.
 
 For Gmail, use an [App Password](https://myaccount.google.com/apppasswords) with
 `SMTP_HOST=smtp.gmail.com` and `SMTP_PORT=587` — not the account password.
@@ -240,8 +254,8 @@ givezy.in {
 }
 EOF
 
-# Build and launch
-docker compose up -d --build
+# Pull the image built by CI and launch
+docker compose pull app && docker compose up -d
 ```
 
 ---
@@ -250,6 +264,18 @@ docker compose up -d --build
 
 **502 Bad Gateway?**
 → App container probably crashed. Check: `docker compose logs app --tail 30`
+
+**Changed .env but nothing happened?**
+→ Containers keep the environment they were created with. `docker compose up -d
+--force-recreate app`, not `restart`.
+
+**Deploy went red but the site is fine?**
+→ Check whether it failed on the health check rather than the deploy. The app
+runs migrations and seeds before answering, which takes a while on this box.
+
+**Disk filling up?**
+→ `docker builder prune -af` and `journalctl --vacuum-size=50M`. Deploys prune
+old images automatically; two images do not fit on this disk.
 
 **Build killed?**
 → Out of memory. Make sure swap is on: `swapon --show`
@@ -263,7 +289,7 @@ docker compose up -d --build
 **Need to change admin password?**
 → Edit `~/givezy/.env`, change ADMIN_PASSWORD, then:
 ```bash
-docker compose down && docker compose up -d --build
+docker compose up -d --force-recreate app
 ```
 
 ---
@@ -272,6 +298,8 @@ docker compose down && docker compose up -d --build
 | Item | Cost |
 |------|------|
 | DigitalOcean droplet (Bangalore) | $4/mo |
+| Weekly snapshots (recommended, not yet enabled) | ~$1-2/mo |
+| Container registry (GHCR) | Free |
 | givezy.in domain (Porkbun) | ~$7/yr (~$0.60/mo) |
 | SSL (Let's Encrypt via Caddy) | Free |
 | CI/CD (GitHub Actions) | Free |
