@@ -1,13 +1,15 @@
 #!/bin/sh
 set -e
 
-# Migration and seed tooling lives outside the app's node_modules; the
-# standalone bundle is traced from the server's own imports and must not be
-# reshuffled by an npm install.
+# Seed tooling lives outside the app's node_modules; the standalone bundle is
+# traced from the server's imports and must not be reshuffled by an npm install.
 export PATH="/opt/tools/node_modules/.bin:$PATH"
 
-echo "Running database migrations..."
-drizzle-kit push --force
+echo "Applying database migrations..."
+# Deliberately not `drizzle-kit push`: it needs an interactive terminal to
+# resolve ambiguities, and exits zero when it cannot get one. In a container
+# that meant the schema silently never changed while the app started anyway.
+node scripts/migrate.mjs
 
 echo "Seeding admin user..."
 tsx src/lib/seed.ts

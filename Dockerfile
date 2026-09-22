@@ -18,16 +18,16 @@ ENV NODE_OPTIONS="--max-old-space-size=1024"
 RUN npm run build
 
 # ---- migration tooling ----
-# Installed separately rather than into the app's node_modules: the standalone
-# bundle is traced from the server's imports, and an npm install inside it could
-# prune something the server needs. drizzle-orm is here too because drizzle-kit
-# resolves both it and the SQLite driver relative to itself, not to the app.
+# The seed runs before the server starts and is not part of the traced bundle,
+# so it needs its own tooling. Installed separately rather than into the app's
+# node_modules, because an npm install inside a traced bundle could prune
+# something the server needs.
 FROM node:20-alpine AS tools
 WORKDIR /tools
 RUN npm init -y > /dev/null \
     # No --omit=optional: @libsql/client ships its native bindings as optional
     # platform dependencies, and without them drizzle-kit reports it as missing
-    && npm install --no-package-lock drizzle-kit@^0.31.9 drizzle-orm@^0.45.1 @libsql/client@^0.17.0 bcryptjs@^3.0.3 tsx@^4.21.0 \
+    && npm install --no-package-lock drizzle-orm@^0.45.1 @libsql/client@^0.17.0 bcryptjs@^3.0.3 tsx@^4.21.0 \
     && npm cache clean --force
 
 # ---- run ----
@@ -55,6 +55,7 @@ COPY --from=tools /tools/node_modules/drizzle-orm ./node_modules/drizzle-orm
 COPY --from=tools /tools/node_modules/@libsql ./node_modules/@libsql
 COPY --from=tools /tools/node_modules/bcryptjs ./node_modules/bcryptjs
 COPY drizzle ./drizzle
+COPY scripts ./scripts
 COPY drizzle.config.ts tsconfig.json ./
 COPY src ./src
 COPY entrypoint.sh ./
