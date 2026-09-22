@@ -1,0 +1,58 @@
+name: Build check
+
+# Builds the image on branches and pull requests without pushing or deploying.
+# A Dockerfile change once reached main and broke the build there, because a
+# working checkout hides problems a clean build exposes.
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: givezy-app:check
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Report image size
+        run: docker images givezy-app:check --format 'image size: {{.Size}}'
+
+      - name: Check the entrypoint's tooling resolves
+        run: |
+          docker run --rm --entrypoint sh givezy-app:check -c '
+            set -e
+            export PATH="/opt/tools/node_modules/.bin:$PATH"
+            test -f server.js || { echo "server.js missing — standalone output not copied"; exit 1; }
+            command -v drizzle-kit > /dev/null || { echo "drizzle-kit missing"; exit 1; }
+            command -v tsx > /dev/null || { echo "tsx missing"; exit 1; }
+            node -e "require.resolve(\"@libsql/client\")" || { echo "@libsql/client not traced into standalone"; exit 1; }
+            node -e "require.resolve(\"bcryptjs\")" || { echo "bcryptjs not traced into standalone"; exit 1; }
+            echo "entrypoint prerequisites present"
+          '
+
+      - name: Boot the container and check it answers
+        run: |
+          docker run -d --name check -p 3000:3000 -e NEXTAUTH_SECRET=ci-only-not-a-real-secret givezy-app:check
+          for i in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://localhost:3000/api/config; then
+              echo "container booted and answered"
+              docker rm -f check > /dev/null
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "container did not answer in 90s:"
+          docker logs check
+          docker rm -f check > /dev/null
+          exit 1
