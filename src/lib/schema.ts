@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 
 export const donations = sqliteTable("donations", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -114,6 +114,17 @@ export const waitlist = sqliteTable("waitlist", {
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
 
+// Coordinates for a pincode, looked up once and kept, so serviceability checks
+// don't hit the geocoder repeatedly. A row with null lat/lng records a lookup
+// that found nothing, so we don't retry a bad pincode on every visit.
+export const pincodes = sqliteTable("pincodes", {
+  pincode: text("pincode").primaryKey(),
+  lat: real("lat"),
+  lng: real("lng"),
+  label: text("label"),
+  lookedUpAt: text("looked_up_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
 export type Donation = typeof donations.$inferSelect;
 export type NewDonation = typeof donations.$inferInsert;
 export type Admin = typeof admins.$inferSelect;
@@ -122,3 +133,4 @@ export type NewShipment = typeof shipments.$inferInsert;
 export type Setting = typeof settings.$inferSelect;
 export type Lead = typeof leads.$inferSelect;
 export type WaitlistEntry = typeof waitlist.$inferSelect;
+export type PincodeRow = typeof pincodes.$inferSelect;

@@ -5,11 +5,14 @@ import {
   setBags,
   setGenres,
   setCaps,
+  setServiceArea,
+  DEFAULT_SERVICE_AREA,
   setContent,
   DEFAULT_CONTENT,
   DEFAULT_CAPS,
   type Bag,
   type Caps,
+  type ServiceArea,
   type SiteContent,
   type Genre,
 } from "@/lib/settings";
@@ -65,6 +68,20 @@ function sanitizeGenres(input: unknown): Genre[] | null {
     out.push({ id: id.slice(0, 40), label: String(g.label || id).slice(0, 80) });
   }
   return out;
+}
+
+function sanitizeServiceArea(input: unknown): ServiceArea {
+  const a = (input || {}) as Partial<ServiceArea>;
+  const bounded = (v: unknown, fallback: number, min: number, max: number) => {
+    const n = Number(v);
+    return Number.isFinite(n) && n >= min && n <= max ? n : fallback;
+  };
+  return {
+    enabled: typeof a.enabled === "boolean" ? a.enabled : DEFAULT_SERVICE_AREA.enabled,
+    centreLat: bounded(a.centreLat, DEFAULT_SERVICE_AREA.centreLat, -90, 90),
+    centreLng: bounded(a.centreLng, DEFAULT_SERVICE_AREA.centreLng, -180, 180),
+    radiusKm: bounded(a.radiusKm, DEFAULT_SERVICE_AREA.radiusKm, 1, 500),
+  };
 }
 
 function sanitizeCaps(input: unknown): Caps {
@@ -134,6 +151,7 @@ export async function PUT(req: NextRequest) {
       await setGenres(genres);
     }
     if (body.caps !== undefined) await setCaps(sanitizeCaps(body.caps));
+    if (body.serviceArea !== undefined) await setServiceArea(sanitizeServiceArea(body.serviceArea));
     if (body.content !== undefined) await setContent(sanitizeContent(body.content));
 
     return NextResponse.json({ success: true, ...(await getSiteConfig()) });

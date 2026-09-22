@@ -2,23 +2,28 @@
 
 import { useState } from "react";
 import { Loader2, Save, Plus, Trash2 } from "lucide-react";
-import type { Bag, Caps, SiteContent, Genre } from "@/lib/settings";
+import type { Bag, Caps, SiteContent, Genre, ServiceArea } from "@/lib/settings";
+import ServiceAreaMap from "@/components/ServiceAreaMap";
+import ServiceAreaTester from "@/components/ServiceAreaTester";
 
-type Tab = "pricing" | "caps" | "content";
+type Tab = "pricing" | "area" | "caps" | "content";
 
 export default function AdminSettingsForm({
   initialBags,
+  initialServiceArea,
   initialGenres,
   initialCaps,
   initialContent,
 }: {
   initialBags: Bag[];
+  initialServiceArea: ServiceArea;
   initialGenres: Genre[];
   initialCaps: Caps;
   initialContent: SiteContent;
 }) {
   const [tab, setTab] = useState<Tab>("pricing");
   const [bags, setBags] = useState<Bag[]>(initialBags);
+  const [serviceArea, setServiceArea] = useState<ServiceArea>(initialServiceArea);
   const [genres, setGenres] = useState<Genre[]>(initialGenres);
   const [caps, setCaps] = useState<Caps>(initialCaps);
   const [content, setContent] = useState<SiteContent>(initialContent);
@@ -32,7 +37,7 @@ export default function AdminSettingsForm({
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bags, genres, caps, content }),
+        body: JSON.stringify({ bags, genres, caps, content, serviceArea }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not save");
@@ -63,7 +68,7 @@ export default function AdminSettingsForm({
     <div>
       <div className="flex items-center justify-between mb-6">
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-          {(["pricing", "caps", "content"] as Tab[]).map((t) => (
+          {(["pricing", "area", "caps", "content"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -71,7 +76,7 @@ export default function AdminSettingsForm({
                 tab === t ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"
               }`}
             >
-              {t === "pricing" ? "Bags & prices" : t === "caps" ? "Daily limits" : "Website text"}
+              {t === "pricing" ? "Bags & prices" : t === "area" ? "Service area" : t === "caps" ? "Daily limits" : "Website text"}
             </button>
           ))}
         </div>
@@ -248,6 +253,29 @@ export default function AdminSettingsForm({
               Add category
             </button>
           </div>
+        </div>
+      )}
+
+      {/* ─── Service area ─── */}
+      {tab === "area" && (
+        <div className="space-y-6 max-w-2xl">
+          <p className="text-sm text-gray-500">
+            Where you collect from, and how far you&apos;ll travel. A giver whose pincode falls
+            outside gets the waiting list instead of a payment screen, so you never take money for a
+            pickup you can&apos;t reach.
+          </p>
+
+          <ServiceAreaMap value={serviceArea} onChange={setServiceArea} />
+
+          <hr className="border-gray-200" />
+
+          <ServiceAreaTester />
+
+          <p className="text-xs text-gray-400">
+            Distance is measured straight line from the pin to the centre of the giver&apos;s
+            pincode, so treat it as approximate near the edge. If the lookup service is ever
+            unreachable, bookings are let through rather than blocked.
+          </p>
         </div>
       )}
 

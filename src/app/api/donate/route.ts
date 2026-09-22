@@ -6,6 +6,7 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { getBags, getGenres, findBag } from "@/lib/settings";
 import { checkCapacity } from "@/lib/capacity";
+import { checkServiceable } from "@/lib/geo";
 import { createRazorpayOrder } from "@/lib/razorpay";
 import { isDemoMode, demoPaymentId, canAcceptDonations } from "@/lib/demo";
 import { settlePayment } from "@/lib/settle-payment";
@@ -85,6 +86,25 @@ export async function POST(req: NextRequest) {
     }
     if (!/^\d{6}$/.test(donorPincode)) {
       return NextResponse.json({ error: "A valid 6-digit pincode is required" }, { status: 400 });
+    }
+
+    // Never take money for a pickup we can't reach. The client checks this too,
+    // but the client can be skipped.
+    const service = await checkServiceable(donorPincode);
+    if (service.status === "outside" || service.status === "unknown") {
+      return NextResponse.json(
+        {
+          error:
+            service.status === "outside"
+              ? "That address is outside the area we collect from at the moment"
+              : "We couldn't find that pincode",
+          outsideServiceArea: true,
+          serviceStatus: service.status,
+          distanceKm: service.distanceKm,
+          radiusKm: service.radiusKm,
+        },
+        { status: 409 },
+      );
     }
     if (category !== "books") {
       return NextResponse.json({ error: "Only book donations are open right now" }, { status: 400 });

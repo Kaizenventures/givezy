@@ -25,6 +25,14 @@ export interface Genre {
   label: string;
 }
 
+/** Where we collect from, and how far out. */
+export interface ServiceArea {
+  enabled: boolean;
+  centreLat: number;
+  centreLng: number;
+  radiusKm: number;
+}
+
 export interface Caps {
   daily: number; // 0 = unlimited
   weekly: number;
@@ -102,6 +110,15 @@ export const DEFAULT_GENRES: Genre[] = [
   { id: "other", label: "Something else" },
 ];
 
+// Off until someone actually draws the area in Settings: silently refusing
+// customers because of an unconfigured default would be worse than accepting all.
+export const DEFAULT_SERVICE_AREA: ServiceArea = {
+  enabled: false,
+  centreLat: 17.385,
+  centreLng: 78.4867,
+  radiusKm: 25,
+};
+
 export const DEFAULT_CAPS: Caps = { daily: 0, weekly: 0, monthly: 0 };
 
 export const DEFAULT_CONTENT: SiteContent = {
@@ -142,6 +159,7 @@ export const DEFAULT_CONTENT: SiteContent = {
 const KEY_BAGS = "pricing.bags";
 const KEY_GENRES = "genres";
 const KEY_CAPS = "caps";
+const KEY_SERVICE_AREA = "serviceArea";
 const KEY_CONTENT = "content";
 
 async function readMany(keys: string[]): Promise<Record<string, unknown>> {
@@ -185,6 +203,15 @@ export async function getGenres(): Promise<Genre[]> {
   return found as Genre[];
 }
 
+export async function getServiceArea(): Promise<ServiceArea> {
+  const found = (await readMany([KEY_SERVICE_AREA]))[KEY_SERVICE_AREA];
+  return { ...DEFAULT_SERVICE_AREA, ...(found as Partial<ServiceArea> | undefined) };
+}
+
+export async function setServiceArea(v: ServiceArea) {
+  return writeSetting(KEY_SERVICE_AREA, v);
+}
+
 export async function getCaps(): Promise<Caps> {
   const found = (await readMany([KEY_CAPS]))[KEY_CAPS];
   return { ...DEFAULT_CAPS, ...(found as Partial<Caps> | undefined) };
@@ -196,13 +223,14 @@ export async function getContent(): Promise<SiteContent> {
 }
 
 export async function getSiteConfig() {
-  const [bags, genres, caps, content] = await Promise.all([
+  const [bags, genres, caps, content, serviceArea] = await Promise.all([
     getBags(),
     getGenres(),
     getCaps(),
     getContent(),
+    getServiceArea(),
   ]);
-  return { bags, genres, caps, content };
+  return { bags, genres, caps, content, serviceArea };
 }
 
 export async function setBags(v: Bag[]) {

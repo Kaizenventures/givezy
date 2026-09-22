@@ -96,6 +96,12 @@ export default function DonationForm() {
   const [donorAddress, setDonorAddress] = useState("");
   const [donorPincode, setDonorPincode] = useState("");
   const [donorCity, setDonorCity] = useState("");
+  const [service, setService] = useState<{
+    status: "ok" | "outside" | "unknown" | "unverified" | "disabled";
+    distanceKm: number | null;
+    radiusKm: number | null;
+  } | null>(null);
+  const [checkingArea, setCheckingArea] = useState(false);
   const [whatsappOptin, setWhatsappOptin] = useState(true);
 
   // Waitlist (shown instead of payment when we're at capacity)
@@ -205,6 +211,15 @@ export default function DonationForm() {
       const res = await fetch("/api/donate", { method: "POST", body: formData });
       const data = await res.json();
 
+      if (res.status === 409 && data.outsideServiceArea) {
+        setService({
+          status: data.serviceStatus,
+          distanceKm: data.distanceKm ?? null,
+          radiusKm: data.radiusKm ?? null,
+        });
+        setSubmitting(false);
+        return;
+      }
       if (res.status === 409 && data.atCapacity) {
         setConfig((c) => (c ? { ...c, accepting: false } : c));
         setSubmitting(false);
@@ -300,9 +315,36 @@ export default function DonationForm() {
     }
   }
 
+  // Tell people we can't reach them before they fill in the rest and reach for a card
+  useEffect(() => {
+    if (donorPincode.length !== 6) {
+      setService(null);
+      return;
+    }
+    let cancelled = false;
+    setCheckingArea(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/serviceability?pincode=${donorPincode}`);
+        const data = await res.json();
+        if (!cancelled && res.ok) setService(data);
+      } catch {
+        // Leave it unchecked; the server decides for real on submit
+      } finally {
+        if (!cancelled) setCheckingArea(false);
+      }
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+      setCheckingArea(false);
+    };
+  }, [donorPincode]);
+
+  const outsideArea = service?.status === "outside" || service?.status === "unknown";
   const paymentsDown = config ? !config.paymentsReady : false;
   // Both states collect details instead of taking money
-  const collectOnly = paymentsDown || (config ? !config.accepting : false);
+  const collectOnly = paymentsDown || outsideArea || (config ? !config.accepting : false);
   const atCapacity = collectOnly;
 
   if (loadingConfig) {
@@ -324,6 +366,8 @@ export default function DonationForm() {
         <p className="text-gray-500 text-sm max-w-sm mx-auto">
           {paymentsDown
             ? `We'll reach out on ${donorPhone} the moment doorstep pickups go live.`
+            : outsideArea
+            ? `We'll message ${donorPhone} as soon as we start collecting from your area.`
             : `You're at the front of tomorrow's queue. We'll message ${donorPhone} to confirm your pickup — nothing to pay now.`}
         </p>
       </div>
@@ -350,10 +394,18 @@ export default function DonationForm() {
       {collectOnly && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
           <p className="font-semibold text-amber-900 text-sm">
-            {paymentsDown ? "Pickups open very soon" : config?.content.capMessageTitle}
+            {outsideArea
+              ? "We don't reach you yet"
+              : paymentsDown
+              ? "Pickups open very soon"
+              : config?.content.capMessageTitle}
           </p>
           <p className="text-amber-700 text-sm mt-1">
-            {paymentsDown
+            {outsideArea
+              ? service?.radiusKm
+                ? `We're collecting within ${service.radiusKm} km of Hyderabad for now. Leave your details and we'll tell you the moment we reach your area.`
+                : "We're not collecting from your area yet. Leave your details and we'll tell you the moment we do."
+              : paymentsDown
               ? "We're putting the finishing touches on doorstep pickups. Leave your details and you'll be first to know when we go live."
               : config?.content.capMessageBody}
           </p>
@@ -609,6 +661,13 @@ export default function DonationForm() {
               maxLength={6}
               className={inputClass(!!fieldErrors.donorPincode)}
             />
+            {checkingArea && <p className="text-xs text-gray-400 mt-1">Checking your area…</p>}
+            {!checkingArea && service?.status === "ok" && (
+              <p className="text-xs text-emerald-600 mt-1">We collect from your area.</p>
+            )}
+            {!checkingArea && outsideArea && (
+              <p className="text-xs text-amber-600 mt-1">We don&apos;t reach this pincode yet.</p>
+            )}
           </Field>
           <Field label="City">
             <input
@@ -640,7 +699,11 @@ export default function DonationForm() {
           className="w-full mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-amber-600 rounded-xl hover:bg-amber-700 transition-all disabled:opacity-50"
         >
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-          {paymentsDown ? "Notify me when pickups open" : "Save my spot for tomorrow"}
+          {outsideArea
+            ? "Tell me when you reach my area"
+            : paymentsDown
+            ? "Notify me when pickups open"
+            : "Save my spot for tomorrow"}
         </button>
       ) : (
         <>
