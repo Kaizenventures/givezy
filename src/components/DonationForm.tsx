@@ -498,7 +498,7 @@ export default function DonationForm() {
         <>
           <h3 className="text-sm font-semibold text-gray-900 mb-1">What kind of books?</h3>
           <p className="text-xs text-gray-400 mb-3">
-            Optional — helps us get them to the right school or library. Pick as many as apply.
+            Optional — helps us sort them properly when they arrive. Pick as many as apply.
           </p>
           <div className="flex flex-wrap gap-2 mb-8">
             {config?.genres.map((g) => {

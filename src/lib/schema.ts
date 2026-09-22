@@ -74,6 +74,10 @@ export const shipments = sqliteTable("shipments", {
   shiprocketOrderId: text("shiprocket_order_id"),
   shiprocketShipmentId: text("shiprocket_shipment_id"),
   shiprocketAwb: text("shiprocket_awb"),
+  // True when the pickup was arranged outside Shiprocket — by phone, another
+  // courier, or our own vehicle — so the admin panel can say so honestly.
+  bookedManually: integer("booked_manually", { mode: "boolean" }).notNull().default(false),
+  courierName: text("courier_name"),
   trackingUrl: text("tracking_url"),
   fulfillmentStatus: text("fulfillment_status").notNull().default("pending"), // pending | processing | shipped | delivered | cancelled
 

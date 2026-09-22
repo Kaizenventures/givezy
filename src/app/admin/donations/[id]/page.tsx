@@ -8,6 +8,8 @@ import Link from "next/link";
 import { AdminShell } from "../../layout";
 import DonationStatusUpdate from "@/components/DonationStatusUpdate";
 import FulfilPickupButton from "@/components/FulfilPickupButton";
+import ManualPickupForm from "@/components/ManualPickupForm";
+import { shiprocketConfigured } from "@/lib/shiprocket";
 import { getBags, findBag, bagLabel } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +50,17 @@ export default async function DonationDetailPage({
     // pre-v2 rows stored a single imageUrl instead
   }
   if (photos.length === 0 && donation.imageUrl) photos = [donation.imageUrl];
+
+  const shiprocketReady = shiprocketConfigured();
+
+  const alreadyBooked = !!(shipment?.shiprocketOrderId || shipment?.bookedManually);
+  const pickupBlockedReason = !shipment
+    ? "No payment record for this pickup."
+    : shipment.paymentStatus !== "paid"
+    ? "Record a pickup once the payment has cleared."
+    : alreadyBooked
+    ? "A pickup is already recorded for this booking."
+    : null;
 
   const fulfilBlockedReason =
     !shipment ? "No payment record for this pickup."
@@ -185,6 +198,14 @@ export default async function DonationDetailPage({
                     <dd className="font-mono text-xs text-gray-700">{shipment.razorpayPaymentId}</dd>
                   </div>
                 )}
+                {shipment.bookedManually && (
+                  <div>
+                    <dt className="text-gray-500">Pickup</dt>
+                    <dd className="text-gray-700 text-xs">
+                      Arranged by hand{shipment.courierName ? ` — ${shipment.courierName}` : ""}
+                    </dd>
+                  </div>
+                )}
                 {shipment.shiprocketOrderId && (
                   <div>
                     <dt className="text-gray-500">Shiprocket Order ID</dt>
@@ -275,7 +296,18 @@ export default async function DonationDetailPage({
           <div className="bg-gray-50 rounded-lg p-5">
             <h3 className="font-semibold text-gray-900 mb-3">Quick Actions</h3>
             <div className="space-y-2">
-              <FulfilPickupButton donationId={donation.id} disabledReason={fulfilBlockedReason} />
+              {shiprocketReady ? (
+                <FulfilPickupButton donationId={donation.id} disabledReason={fulfilBlockedReason} />
+              ) : (
+                <p className="text-xs text-gray-400">
+                  Shiprocket isn&apos;t connected, so pickups are arranged by hand for now.
+                </p>
+              )}
+              <ManualPickupForm
+                donationId={donation.id}
+                disabledReason={pickupBlockedReason}
+                startOpen={!shiprocketReady && !pickupBlockedReason}
+              />
               <a
                 href={`tel:${donation.donorPhone}`}
                 className="block w-full text-center py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"

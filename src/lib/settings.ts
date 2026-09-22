@@ -124,13 +124,13 @@ export const DEFAULT_CAPS: Caps = { daily: 0, weekly: 0, monthly: 0 };
 export const DEFAULT_CONTENT: SiteContent = {
   heroTitle: "Your clutter is someone's treasure.",
   heroSubtitle:
-    "Books gathering dust on your shelf can restart someone's education. Tell us what you have — we handle the rest.",
+    "Books gathering dust on your shelf don't have to end up in the bin. Tell us what you have — we collect from your door and make sure they're reused or recycled.",
   pickupLine: "We pick them up from your doorstep.",
   impactTitle: "That textbook gathering dust on your shelf?",
   impactBody: [
-    "It could be the reason a child in Old City learns to read this year. In Hyderabad alone, thousands of families can't afford school supplies — but they have the hunger to learn.",
-    "Every bag you send is sorted, checked and passed on to schools, libraries and community centres that need it most. Nothing goes to landfill.",
-    "Your clutter is someone's comfort. Your old is someone's new beginning.",
+    "Most books that leave a house go out with the general rubbish, mixed in with everything else, where nothing can be recovered from them.",
+    "We sort every bag we collect. Books still fit to read are directed towards reuse, and the rest towards paper recycling.",
+    "You get your shelf back, and they get a second life instead of a bin.",
   ].join("\n\n"),
   getStartedTitle: "Get started",
   clothesComingSoon: true,

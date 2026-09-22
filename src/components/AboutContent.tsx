@@ -20,14 +20,14 @@ const VALUES = [
   {
     icon: Users,
     title: "Community first",
-    description: "Every item goes directly to families, shelters, and schools in Hyderabad who need it.",
+    description: "Everything is sorted by hand here in Hyderabad — what can be reused is passed on, the rest goes for recycling.",
     color: "text-emerald-600",
     bg: "bg-emerald-50",
   },
   {
     icon: BookOpen,
     title: "Education matters",
-    description: "Books are knowledge. A textbook you pass on can change the trajectory of a child's future.",
+    description: "Books are knowledge. A textbook that is still readable deserves another reader, not a bin.",
     color: "text-amber-600",
     bg: "bg-amber-50",
   },

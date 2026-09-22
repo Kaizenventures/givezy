@@ -8,6 +8,7 @@ import { getWorklist, type WorkItem } from "@/lib/worklist";
 import WorkCard from "@/components/WorkCard";
 import QuickStatusButton from "@/components/QuickStatusButton";
 import FulfilPickupButton from "@/components/FulfilPickupButton";
+import { shiprocketConfigured } from "@/lib/shiprocket";
 import { Package, Clock, Truck, PhoneCall, CheckCircle2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,7 @@ export default async function AdminDashboard() {
   if (!session) redirect("/admin/login");
 
   const [work, capacity] = await Promise.all([getWorklist(), checkCapacity()]);
+  const shiprocketReady = shiprocketConfigured();
 
   const todoCount = work.postBag.length + work.bookPickup.length + work.abandoned.length;
 
@@ -57,25 +59,38 @@ export default async function AdminDashboard() {
       <Section
         icon={Truck}
         title="Book the courier"
-        help="These donors say their bag is packed. Book the Shiprocket pickup."
+        help={
+          shiprocketReady
+            ? "These givers say their bag is packed. Book the courier."
+            : "These givers say their bag is packed. Arrange a collection, then record it on the booking."
+        }
         items={work.bookPickup}
         tone="amber"
-        action={(item) => (
-          <div className="w-40">
-            <FulfilPickupButton
-              donationId={item.donation.id}
-              disabledReason={
-                !item.shipment
-                  ? "No payment record."
-                  : item.shipment.paymentStatus !== "paid"
-                  ? "Not paid yet."
-                  : item.shipment.shiprocketOrderId
-                  ? "Pickup already booked."
-                  : null
-              }
-            />
-          </div>
-        )}
+        action={(item) =>
+          shiprocketReady ? (
+            <div className="w-40">
+              <FulfilPickupButton
+                donationId={item.donation.id}
+                disabledReason={
+                  !item.shipment
+                    ? "No payment record."
+                    : item.shipment.paymentStatus !== "paid"
+                    ? "Not paid yet."
+                    : item.shipment.shiprocketOrderId
+                    ? "Pickup already booked."
+                    : null
+                }
+              />
+            </div>
+          ) : (
+            <Link
+              href={`/admin/donations/${item.donation.id}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-900 text-white hover:bg-gray-800 whitespace-nowrap"
+            >
+              Arrange pickup
+            </Link>
+          )
+        }
         waMessage="Hi {name}, we're booking your Givezy pickup now. Ref: {ref}"
       />
 

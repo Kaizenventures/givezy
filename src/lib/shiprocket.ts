@@ -53,6 +53,11 @@ async function authHeaders(): Promise<Record<string, string>> {
   };
 }
 
+/** Whether a Shiprocket account is wired up at all. */
+export function shiprocketConfigured(): boolean {
+  return !!SHIPROCKET_EMAIL && !!SHIPROCKET_PASSWORD;
+}
+
 // ─── Types ───────────────────────────────────────────────────────────
 
 export interface ShippingEstimate {

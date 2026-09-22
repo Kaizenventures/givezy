@@ -37,11 +37,20 @@ The WhatsApp button next to each person opens a chat with a message already
 written — you can edit it before sending, or just send it.
 
 ### "Book the courier"
-They've told us their bag is packed. Press **Book Shiprocket pickup** and the
-courier is arranged automatically. You'll see a confirmation, and the pickup
-moves to "Out for pickup".
+They've told us their bag is packed.
 
-If the button is greyed out, the reason is written underneath it.
+**While Shiprocket isn't connected** — which is the case today — press **Arrange
+pickup**, sort the collection out however you normally would, then fill in
+**Record a pickup you arranged** on that booking. Courier name, date and a
+tracking reference are all optional; the point is to mark it as collected so it
+leaves your to-do list.
+
+**Once Shiprocket is connected**, a **Book Shiprocket pickup** button appears
+instead and does it automatically. If that button is greyed out, the reason is
+written underneath it.
+
+Either way the pickup moves to "Out for pickup", and the booking says whether it
+was arranged by hand or through Shiprocket.
 
 ### "Follow up — didn't finish paying"
 These people typed in their full name, phone and home address, then stopped at
