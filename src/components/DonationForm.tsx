@@ -471,49 +471,75 @@ export default function DonationForm() {
         </>
       )}
 
-      {/* Bag size */}
+      {/* Bag. While only one size is offered this is what you get, not a choice;
+          the picker returns automatically if more sizes are added in Settings. */}
       <h3 className="text-sm font-semibold text-gray-900 mb-1">
         <Package className="w-3.5 h-3.5 inline mr-1" />
-        Pick your bag
+        {activeBuckets.length === 1 ? "Your Givezy bag" : "Pick your bag"}
       </h3>
       <p className="text-xs text-gray-400 mb-3">
-        We post you an empty kraft sack in this size. Fill it with books and the courier collects it.
-        They weigh it at pickup, so please stay within the limit.
+        We post you an empty kraft sack. Fill it with books and the courier collects it from your
+        door. They weigh it at pickup, so please stay within the limit.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2" role="radiogroup" aria-label="Bag size">
-        {activeBuckets.map((b) => {
-          const on = bucketId === b.id;
-          return (
-            <button
-              key={b.id}
-              type="button"
-              role="radio"
-              aria-checked={on}
-              onClick={() => setBucketId(b.id)}
-              className={`p-3 rounded-xl border text-left transition-all flex sm:flex-col items-center sm:items-stretch gap-3 ${
-                on ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <BagDrawing widthCm={b.widthCm} lengthCm={b.lengthCm} scale={drawScale} />
-              <span className="flex-1">
-                <span className={`block text-sm font-semibold ${on ? "text-emerald-700" : "text-gray-800"}`}>
-                  {b.label}
+      {activeBuckets.length === 1 ? (
+        activeBuckets.map((b) => (
+          <div
+            key={b.id}
+            className="flex items-center gap-4 p-4 rounded-xl border border-emerald-500 bg-emerald-50 mb-2"
+          >
+            <BagDrawing
+              widthCm={b.widthCm}
+              lengthCm={b.lengthCm}
+              scale={drawScale}
+              className="w-20 h-28 shrink-0"
+            />
+            <div>
+              <p className="text-base font-semibold text-emerald-800">{b.label}</p>
+              <p className="text-sm text-emerald-700 mt-0.5">
+                Holds about {b.approxBooks} books — up to {b.maxKg} kg
+              </p>
+              <p className="text-xs text-emerald-600/80 mt-1 tabular-nums">
+                {b.widthCm} × {b.lengthCm} cm
+              </p>
+            </div>
+          </div>
+        ))
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2" role="radiogroup" aria-label="Bag size">
+          {activeBuckets.map((b) => {
+            const on = bucketId === b.id;
+            return (
+              <button
+                key={b.id}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => setBucketId(b.id)}
+                className={`p-3 rounded-xl border text-left transition-all flex sm:flex-col items-center sm:items-stretch gap-3 ${
+                  on ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <BagDrawing widthCm={b.widthCm} lengthCm={b.lengthCm} scale={drawScale} />
+                <span className="flex-1">
+                  <span className={`block text-sm font-semibold ${on ? "text-emerald-700" : "text-gray-800"}`}>
+                    {b.label}
+                  </span>
+                  <span className="block text-xs text-gray-400 mt-0.5 tabular-nums">
+                    {b.widthCm} × {b.lengthCm} cm
+                  </span>
+                  <span className={`block text-xs mt-1.5 ${on ? "text-emerald-700" : "text-gray-600"}`}>
+                    About {b.approxBooks} books · up to {b.maxKg} kg
+                  </span>
+                  <span className={`block text-sm font-bold mt-1.5 ${on ? "text-emerald-700" : "text-gray-700"}`}>
+                    {b.priceDisplay}
+                  </span>
                 </span>
-                <span className="block text-xs text-gray-400 mt-0.5 tabular-nums">
-                  {b.widthCm} × {b.lengthCm} cm
-                </span>
-                <span className={`block text-xs mt-1.5 ${on ? "text-emerald-700" : "text-gray-600"}`}>
-                  About {b.approxBooks} books · up to {b.maxKg} kg
-                </span>
-                <span className={`block text-sm font-bold mt-1.5 ${on ? "text-emerald-700" : "text-gray-700"}`}>
-                  {b.priceDisplay}
-                </span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
       {fieldErrors.bucket && <p className="text-xs text-red-500 mb-2">{fieldErrors.bucket}</p>}
 
       {/* Payable amount */}
@@ -680,13 +706,23 @@ function Field({
 }
 
 /** A sack drawn to shared scale, stitched along the bottom and one side like the real bags. */
-function BagDrawing({ widthCm, lengthCm, scale }: { widthCm: number; lengthCm: number; scale: number }) {
+function BagDrawing({
+  widthCm,
+  lengthCm,
+  scale,
+  className = "w-12 h-16 sm:w-full sm:h-20 shrink-0",
+}: {
+  widthCm: number;
+  lengthCm: number;
+  scale: number;
+  className?: string;
+}) {
   const w = widthCm * scale;
   const h = lengthCm * scale;
   const x = (52 - w) / 2;
   const y = 68 - h;
   return (
-    <svg viewBox="0 0 52 70" className="w-12 h-16 sm:w-full sm:h-20 shrink-0" aria-hidden="true">
+    <svg viewBox="0 0 52 70" className={className} aria-hidden="true">
       <rect x={x} y={y} width={w} height={h} rx="1" fill="#E4CFA8" stroke="#B0946A" strokeWidth="0.8" />
       <path
         d={`M ${x + 1.5} ${y + h - 2} H ${x + w - 2} V ${y + 1.5}`}

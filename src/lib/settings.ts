@@ -60,19 +60,16 @@ export interface SiteContent {
  */
 export const DEFAULT_BAGS: Bag[] = [
   {
-    id: "bag-small", label: "Small bag", hint: "A shelf's worth",
-    widthCm: 35, lengthCm: 50, approxBooks: 10, maxKg: 5, pricePaise: 19900,
-    packedCm: [42, 32, 18], tareGrams: 220,
-  },
-  {
-    id: "bag-medium", label: "Medium bag", hint: "A proper clear-out",
-    widthCm: 45, lengthCm: 65, approxBooks: 25, maxKg: 12, pricePaise: 29900,
-    packedCm: [55, 40, 22], tareGrams: 220,
-  },
-  {
-    id: "bag-large", label: "Large bag", hint: "A whole bookcase",
-    widthCm: 55, lengthCm: 85, approxBooks: 45, maxKg: 20, pricePaise: 39900,
-    packedCm: [72, 50, 28], tareGrams: 220,
+    id: "bag-5kg",
+    label: "Givezy bag",
+    hint: "About a shelf's worth",
+    widthCm: 35,
+    lengthCm: 50,
+    approxBooks: 10,
+    maxKg: 5,
+    pricePaise: 49900,
+    packedCm: [42, 32, 18],
+    tareGrams: 220,
   },
 ];
 
@@ -86,6 +83,9 @@ const LEGACY_LABELS: Record<string, string> = {
   "upto-5kg": "Up to 5 kg (pre-bag)",
   "5-10kg": "5–10 kg (pre-bag)",
   "10-15kg": "10–15 kg (pre-bag)",
+  "bag-small": "Small bag (retired)",
+  "bag-medium": "Medium bag (retired)",
+  "bag-large": "Large bag (retired)",
 };
 
 export function bagLabel(bags: Bag[], id: string): string {
@@ -118,11 +118,11 @@ export const DEFAULT_CONTENT: SiteContent = {
   getStartedTitle: "Get started",
   clothesComingSoon: true,
   howItWorks: [
-    "Fill in a quick form — pick a category and snap a picture.",
-    "Pick the bag size that fits your books.",
+    "Fill in a quick form and snap a picture of your books.",
     "Pay for the pickup.",
-    "We send you a de-clutter bag.",
-    "Pack it, message us, and the courier collects it.",
+    "We post you a Givezy bag.",
+    "Fill it with up to 5 kg of books.",
+    "Message us on WhatsApp and the courier collects it.",
   ],
   nextStepTitle: "The Next Step",
   nextStepBody:
