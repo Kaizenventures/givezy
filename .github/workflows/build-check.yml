@@ -26,7 +26,8 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Report image size
-        run: docker images givezy-app:check --format 'image size: {{.Size}}'
+        run: |
+          docker images givezy-app:check --format 'image size: {{.Size}}'
 
       - name: Check the entrypoint's tooling resolves
         run: |
