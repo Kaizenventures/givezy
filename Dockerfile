@@ -10,6 +10,9 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
+# Next touches the database client while collecting route data, so the directory
+# has to exist even though the real database lives on a volume at runtime
+RUN mkdir -p data public/uploads
 # The droplet's own limit; keep the build honest about what it needs
 ENV NODE_OPTIONS="--max-old-space-size=1024"
 RUN npm run build

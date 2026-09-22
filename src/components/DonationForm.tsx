@@ -286,6 +286,7 @@ export default function DonationForm() {
   }, [
     validate, selectedBucket, category, bucketId, donorName, donorPhone, donorEmail,
     donorAddress, donorPincode, donorCity, whatsappOptin, photos, router, genres,
+    config?.razorpayKeyId,
   ]);
 
   async function handleWaitlist() {
