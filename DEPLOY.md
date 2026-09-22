@@ -56,17 +56,29 @@ free -h
 
 ## CI/CD (Auto-Deploy on Push)
 
-Every push to `main` deploys automatically, and a deploy can also be re-run from
-the Actions tab without making an empty commit.
+Every push to `main` builds a Docker image in GitHub Actions, pushes it to GHCR,
+and the droplet pulls it. A deploy can also be re-run from the Actions tab.
 
-**Secrets** (`DROPLET_IP`, `SSH_PRIVATE_KEY`) are configured. The private half of
-the deploy key lives on the machine it was generated on, at `~/.ssh/givezy-deploy`;
-the public half is in the droplet's `~/.ssh/authorized_keys`.
+**The droplet never builds anything.** It has 512 MB of memory and a 10 GB disk;
+building Next.js there needed a swapfile, filled the disk twice and took the site
+down for ten minutes a time. Deploys are now a pull and a restart.
 
-The workflow clears logs and Docker build cache before building, because the
-10 GB disk has twice filled mid-build and taken the site down. It checks the app
-answers on port 3000 afterwards, so a broken deploy fails the run rather than
-reporting success.
+Deploys pin the exact commit's image rather than `:latest`, so a later restart
+cannot silently pick up a different build. To roll back, run on the droplet:
+
+```bash
+cd ~/givezy && GIVEZY_IMAGE=ghcr.io/kaizenventures/givezy-app:<sha> docker compose up -d
+```
+
+To build by hand if GHCR is ever unreachable:
+
+```bash
+cd ~/givezy && docker build -t ghcr.io/kaizenventures/givezy-app:latest . && docker compose up -d
+```
+
+**Secrets** (`DROPLET_IP`, `SSH_PRIVATE_KEY`) are configured. The registry is
+authenticated with each run's own short-lived token, so no long-lived credential
+sits on the droplet.
 
 To regenerate the deploy key:
 
@@ -89,6 +101,46 @@ Add these two secrets:
 - **SSH_PRIVATE_KEY** → paste the contents of `~/.ssh/givezy-deploy` (the private key, NOT .pub)
 
 That's it. Now every `git push origin main` auto-deploys.
+
+---
+
+## Backups
+
+`scripts/backup.sh` runs nightly at 03:00 IST from root's crontab. It writes to
+`/root/backups`:
+
+- `db-<date>.db.gz` — a consistent snapshot taken with `sqlite3 .backup`, kept 14 days
+- `uploads-current/` — a mirror of the photo volume, not a dated archive
+
+Photos are mirrored rather than archived because there are already 74 MB of them
+and fourteen dated copies would fill the disk.
+
+Check it ran:
+
+```bash
+tail -5 /var/log/givezy-backup.log && ls -lh /root/backups
+```
+
+### Restoring
+
+```bash
+cd ~/givezy && docker compose down
+gunzip -c /root/backups/db-YYYY-MM-DD-HHMM.db.gz > /tmp/restore.db
+cp /tmp/restore.db "$(docker volume inspect givezy_app-data --format '{{.Mountpoint}}')/givezy.db"
+rsync -a /root/backups/uploads-current/ "$(docker volume inspect givezy_app-uploads --format '{{.Mountpoint}}')/"
+docker compose up -d
+```
+
+### These are still on the same droplet
+
+Local backups protect against a bad migration or a corrupted database. They do
+**not** protect against losing the droplet, which currently holds the only copy
+of every booking, every giver's address and every photo. Two ways to fix that:
+
+- **DigitalOcean snapshots** — enable weekly backups on the droplet in the DO
+  control panel. No keys, a couple of clicks, roughly $1–2/month.
+- **Off-box copies** — install `rclone`, configure a bucket, and set
+  `BACKUP_REMOTE` in the crontab entry. The script already handles it.
 
 ---
 

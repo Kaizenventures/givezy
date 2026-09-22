@@ -78,7 +78,10 @@ jobs:
             docker compose up -d
 
             docker logout ghcr.io || true
-            docker image prune -f || true
+            # -a, not just dangling: the previous build stays tagged otherwise and
+            # two 1 GB images will not fit on a 10 GB disk. Every build is in the
+            # registry, so a rollback re-pulls rather than relying on local copies.
+            docker image prune -af || true
 
             # The app migrates and seeds before Next starts, which takes a while
             # on this box, and curl's plain --retry ignores connection resets.
