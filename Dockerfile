@@ -1,35 +1,49 @@
-FROM node:20-alpine
+# Built in CI and pulled by the droplet, which has 512 MB of memory and cannot
+# compile Next.js without thrashing swap. Nothing here needs credentials, so the
+# image can be built by anyone, anywhere.
+
+# ---- build ----
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+# The droplet's own limit; keep the build honest about what it needs
+ENV NODE_OPTIONS="--max-old-space-size=1024"
+RUN npm run build
+
+# ---- run ----
+FROM node:20-alpine AS runner
 WORKDIR /app
 
 # Alpine ships no zoneinfo, so TZ is silently ignored without this package.
-# Caps roll over and admin dates render in IST, not UTC.
+# Pickup caps roll over and admin dates render in IST, not UTC.
 RUN apk add --no-cache tzdata
 ENV TZ=Asia/Kolkata
 
+# Runtime dependencies only. drizzle-kit and tsx are listed as dependencies
+# because the entrypoint runs migrations and seeds the admin before starting.
 COPY package.json package-lock.json ./
-# Clear npm's download cache in the same layer, otherwise ~/.npm/_cacache is
-# baked into the image and never used again at runtime.
-RUN npm ci && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
-COPY . .
-RUN mkdir -p data public/uploads
-ENV NODE_OPTIONS="--max-old-space-size=1024"
+# Only what the server actually reads at runtime
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.ts ./
+COPY drizzle ./drizzle
+COPY drizzle.config.ts ./
+COPY src ./src
+COPY tsconfig.json ./
+COPY entrypoint.sh ./
 
-# NEXT_PUBLIC_ vars must be available at build time (Next.js inlines them)
-ARG NEXT_PUBLIC_RAZORPAY_KEY_ID=""
-ENV NEXT_PUBLIC_RAZORPAY_KEY_ID=${NEXT_PUBLIC_RAZORPAY_KEY_ID}
-
-# .next/cache is build-only. Dropping it in the same layer keeps it out of the
-# image entirely, rather than adding a layer that merely hides it.
-RUN npm run build && rm -rf .next/cache
+RUN mkdir -p data public/uploads && chmod +x entrypoint.sh
 
 ENV NODE_ENV=production
 ENV DATABASE_URL=file:./data/givezy.db
-EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
-
-COPY entrypoint.sh ./
-RUN chmod +x entrypoint.sh
+EXPOSE 3000
 
 CMD ["./entrypoint.sh"]

@@ -43,6 +43,10 @@ export async function GET() {
       remaining: capacity.remaining,
       demo: isDemoMode(),
       paymentsReady: canAcceptDonations(),
+      // The Razorpay key id is public by design — it is handed to the checkout
+      // widget in the browser. Serving it here rather than inlining it at build
+      // time means the image can be built without any credentials at all.
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID || null,
     });
   } catch (error) {
     console.error("Config error:", error);

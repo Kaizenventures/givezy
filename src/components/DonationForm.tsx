@@ -35,6 +35,7 @@ interface Config {
   remaining: number | null;
   demo: boolean;
   paymentsReady: boolean;
+  razorpayKeyId: string | null;
 }
 
 declare global {
@@ -233,7 +234,7 @@ export default function DonationForm() {
         return;
       }
 
-      const key = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      const key = config?.razorpayKeyId;
       if (!key) throw new Error("Payments are not configured. Please contact us.");
 
       const rzp = new window.Razorpay({

@@ -1,9 +1,9 @@
 services:
   app:
-    build:
-      context: .
-      args:
-        - NEXT_PUBLIC_RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+    # Built and pushed by GitHub Actions; the droplet only ever pulls it.
+    # To build by hand in an emergency:
+    #   docker build -t ghcr.io/kaizenventures/givezy-app:latest .
+    image: ${GIVEZY_IMAGE:-ghcr.io/kaizenventures/givezy-app:latest}
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -20,7 +20,6 @@ services:
       # Razorpay
       - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
       - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
-      - NEXT_PUBLIC_RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
       # Shiprocket
       - SHIPROCKET_EMAIL=${SHIPROCKET_EMAIL}
       - SHIPROCKET_PASSWORD=${SHIPROCKET_PASSWORD}
