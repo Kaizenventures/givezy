@@ -61,8 +61,10 @@ the droplet pulls it. The two run side by side on the same box with separate
 databases, uploads and environment files, so staging cannot touch real data.
 
 Staging is set to `APP_ENV=staging`, which shows a banner on every page and makes
-`robots.txt` disallow everything. `DEPLOY.md` has the details. The droplet never builds anything — it has 512 MB of memory and
-a 10 GB disk, and building there used to take the site down for ten minutes.
+`robots.txt` disallow everything. `DEPLOY.md` has the details.
+
+The droplet never builds anything — it has 512 MB of memory and a 10 GB disk,
+and building there used to take the site down for ten minutes.
 
 Branches and pull requests run `build-check.yml`, which builds the image, then
 boots it and waits for it to answer. That check exists because a Dockerfile
