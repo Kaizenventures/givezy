@@ -116,6 +116,65 @@ That's it. Now every `git push origin main` auto-deploys.
 
 ---
 
+## Environments
+
+Two, on the same droplet, sharing nothing but the machine and Caddy.
+
+| | Production | Staging |
+|---|---|---|
+| URL | givezy.in | staging.givezy.in |
+| Deploys from | `main` | `staging` branch |
+| Database | `app-data` volume | `staging-data` volume |
+| Uploads | `app-uploads` volume | `staging-uploads` volume |
+| Config | `.env` | `.env.staging` |
+| Payments | live keys | demo mode, or Razorpay **test** keys |
+| Search engines | indexed | `robots.txt` disallows everything |
+| Host port | 3000 | 3001 |
+
+Staging shows an amber banner on every page so it can never be mistaken for the
+real site, and its metadata points at its own host.
+
+### Putting something on staging
+
+```bash
+git push origin HEAD:staging
+```
+
+That builds the image, tags it `staging-<sha>` and restarts only the staging
+container. Production is untouched.
+
+One wrinkle worth knowing: the compose file and Caddyfile always come from
+`main`. Staging runs main's infrastructure with the staging branch's
+application image, so **infrastructure changes have to reach `main` before they
+take effect anywhere** — including on staging.
+
+### The staging admin login
+
+Generated when `.env.staging` was created. To read it:
+
+```bash
+grep ADMIN_PASSWORD ~/givezy/.env.staging
+```
+
+### Giving staging real checkout
+
+It runs in demo mode by default, so it cannot take a payment even by accident.
+To exercise real Razorpay checkout, uncomment the `RAZORPAY_*` lines in
+`.env.staging` and fill in **test** keys, then:
+
+```bash
+cd ~/givezy && docker compose up -d --force-recreate staging
+```
+
+Never put live keys in that file.
+
+### DNS
+
+`staging.givezy.in` needs an A record pointing at the droplet, the same as
+`givezy.in`. Caddy issues its certificate automatically once that resolves.
+
+---
+
 ## Backups
 
 `scripts/backup.sh` runs nightly at 03:00 IST from root's crontab. It writes to

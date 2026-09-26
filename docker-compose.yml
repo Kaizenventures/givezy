@@ -1,8 +1,8 @@
 services:
+  # Production. Built and pushed by GitHub Actions; the droplet only pulls.
+  # To build by hand in an emergency:
+  #   docker build -t ghcr.io/kaizenventures/givezy-app:latest .
   app:
-    # Built and pushed by GitHub Actions; the droplet only ever pulls it.
-    # To build by hand in an emergency:
-    #   docker build -t ghcr.io/kaizenventures/givezy-app:latest .
     image: ${GIVEZY_IMAGE:-ghcr.io/kaizenventures/givezy-app:latest}
     restart: unless-stopped
     ports:
@@ -10,37 +10,33 @@ services:
     volumes:
       - app-data:/app/data
       - app-uploads:/app/public/uploads
+    # Secrets come from the file; anything that must differ between environments
+    # is set explicitly below, where it cannot be got wrong by editing .env.
+    env_file: .env
     environment:
+      - APP_ENV=production
+      - NEXTAUTH_URL=https://givezy.in
       - TZ=Asia/Kolkata
       - DATABASE_URL=file:./data/givezy.db
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - NEXTAUTH_URL=https://givezy.in
-      - ADMIN_EMAIL=${ADMIN_EMAIL}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      # Razorpay
-      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
-      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
-      # Shiprocket
-      - SHIPROCKET_EMAIL=${SHIPROCKET_EMAIL}
-      - SHIPROCKET_PASSWORD=${SHIPROCKET_PASSWORD}
-      # Pickup/warehouse address
-      - PICKUP_LOCATION_NAME=${PICKUP_LOCATION_NAME:-Givezy Warehouse}
-      - PICKUP_ADDRESS=${PICKUP_ADDRESS}
-      - PICKUP_CITY=${PICKUP_CITY:-Hyderabad}
-      - PICKUP_STATE=${PICKUP_STATE:-Telangana}
-      - PICKUP_PINCODE=${PICKUP_PINCODE:-500001}
-      - PICKUP_PHONE=${PICKUP_PHONE}
-      # Razorpay webhook (payment.captured / payment.failed)
-      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
-      # Demo mode — auto-disabled once real Razorpay keys are present
-      - DEMO_MODE=${DEMO_MODE:-false}
-      # Transactional email (optional; no-ops when unset)
-      - SMTP_HOST=${SMTP_HOST:-}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USER=${SMTP_USER:-}
-      - SMTP_PASS=${SMTP_PASS:-}
-      - MAIL_FROM=${MAIL_FROM:-}
-      - ADMIN_NOTIFY_EMAIL=${ADMIN_NOTIFY_EMAIL:-}
+
+  # Staging. Same image by default, but its own database, its own uploads and
+  # its own .env — so test payments, test bookings and admin experiments cannot
+  # reach production data.
+  staging:
+    image: ${GIVEZY_STAGING_IMAGE:-ghcr.io/kaizenventures/givezy-app:staging}
+    restart: unless-stopped
+    ports:
+      # Exposed on a different port so the host can health-check it directly
+      - "3001:3000"
+    volumes:
+      - staging-data:/app/data
+      - staging-uploads:/app/public/uploads
+    env_file: .env.staging
+    environment:
+      - APP_ENV=staging
+      - NEXTAUTH_URL=https://staging.givezy.in
+      - TZ=Asia/Kolkata
+      - DATABASE_URL=file:./data/givezy.db
 
   caddy:
     image: caddy:2-alpine
@@ -56,5 +52,7 @@ services:
 volumes:
   app-data:
   app-uploads:
+  staging-data:
+  staging-uploads:
   caddy-data:
   caddy-config:

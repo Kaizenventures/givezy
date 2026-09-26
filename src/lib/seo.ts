@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
 const SITE_NAME = "Givezy";
-const SITE_URL = "https://givezy.in";
+// Differs on staging, so metadata and OG tags point at the right host
+const SITE_URL = process.env.NEXTAUTH_URL || "https://givezy.in";
 const SITE_DESCRIPTION =
   "Pass on books and clothes in Hyderabad with doorstep pickup. Give your pre-loved items a second life — we collect from your home.";
 

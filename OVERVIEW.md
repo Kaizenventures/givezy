@@ -132,6 +132,7 @@ with an accountant before anything changes there.
 | | |
 |---|---|
 | The website | [givezy.in](https://givezy.in) |
+| A practice copy, safe to break | [staging.givezy.in](https://staging.givezy.in) |
 | The admin panel | [givezy.in/admin/login](https://givezy.in/admin/login) |
 | Day-to-day guide | [ADMIN.md](./ADMIN.md) |
 | Servers and deployment | [DEPLOY.md](./DEPLOY.md) |

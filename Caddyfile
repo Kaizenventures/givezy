@@ -1,4 +1,13 @@
+# Production
 givezy.in {
     reverse_proxy app:3000
+    encode gzip
+}
+
+# Staging — same image, separate database, test payment keys.
+# Search engines are kept out by robots.txt, which the app serves differently
+# when APP_ENV is not production.
+staging.givezy.in {
+    reverse_proxy staging:3000
     encode gzip
 }

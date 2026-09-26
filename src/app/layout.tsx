@@ -3,6 +3,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { buildMetadata, organizationJsonLd, localBusinessJsonLd } from "@/lib/seo";
+import { appEnv } from "@/lib/env";
 
 export const metadata: Metadata = buildMetadata();
 
@@ -35,6 +36,11 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased min-h-screen flex flex-col bg-white text-gray-900" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+        {appEnv() === "staging" && (
+          <div className="bg-amber-400 text-amber-950 text-center text-sm font-semibold py-1.5 px-4">
+            Staging — test data and test payments. Nothing here is real.
+          </div>
+        )}
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />

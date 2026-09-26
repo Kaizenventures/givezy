@@ -53,10 +53,15 @@ Bag sizes and prices, the service area, daily caps, book categories and most sit
 copy are admin-editable and live in the `settings` table. Changing them needs no
 deploy.
 
-## Deploys
+## Environments and deploys
 
-Push to `main` and GitHub Actions builds the image, pushes it to GHCR, and the
-droplet pulls it. The droplet never builds anything — it has 512 MB of memory and
+Push to `main` for production (givezy.in); push to `staging` for staging
+(staging.givezy.in). Both build an image in GitHub Actions, push it to GHCR, and
+the droplet pulls it. The two run side by side on the same box with separate
+databases, uploads and environment files, so staging cannot touch real data.
+
+Staging is set to `APP_ENV=staging`, which shows a banner on every page and makes
+`robots.txt` disallow everything. `DEPLOY.md` has the details. The droplet never builds anything — it has 512 MB of memory and
 a 10 GB disk, and building there used to take the site down for ten minutes.
 
 Branches and pull requests run `build-check.yml`, which builds the image, then

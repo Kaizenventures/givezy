@@ -1,7 +1,8 @@
+import { siteUrl } from "@/lib/env";
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://givezy.in";
+  const baseUrl = siteUrl();
 
   return [
     { url: baseUrl, lastModified: new Date(), changeFrequency: "weekly", priority: 1 },
