@@ -31,6 +31,12 @@ services:
     volumes:
       - staging-data:/app/data
       - staging-uploads:/app/public/uploads
+    # Capped so a runaway staging process cannot get production OOM-killed.
+    # The box has 454 MB total and the app uses ~65 MB at rest; this leaves
+    # room to boot and migrate without letting staging take the machine.
+    mem_limit: 256m
+    memswap_limit: 512m
+    cpus: 0.5
     env_file: .env.staging
     environment:
       - APP_ENV=staging
