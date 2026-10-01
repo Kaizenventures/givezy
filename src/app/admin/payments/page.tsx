@@ -8,6 +8,7 @@ import { desc } from "drizzle-orm";
 import { AdminShell } from "../layout";
 import { isDemoRecord } from "@/lib/demo";
 import { bookingRef } from "@/lib/worklist";
+import { isLegacyStatus } from "@/lib/donation-status";
 
 export const dynamic = "force-dynamic";
 
@@ -29,10 +30,21 @@ export default async function PaymentsPage() {
   ]);
   const donorById = new Map(allDonations.map((d) => [d.id, d]));
 
-  const paid = allShipments.filter((s) => s.paymentStatus === "paid");
+  // Shipments belonging to old-site bookings are real history, but counting
+  // them as revenue of the current service overstates it several-fold.
+  const legacyDonationIds = new Set(
+    allDonations.filter((d) => isLegacyStatus(d.status)).map((d) => d.id),
+  );
+  const legacyShipments = allShipments.filter((s) => legacyDonationIds.has(s.donationId));
+  const legacyCollected = legacyShipments
+    .filter((s) => s.paymentStatus === "paid")
+    .reduce((sum, s) => sum + s.totalAmount, 0);
+
+  const currentShipments = allShipments.filter((s) => !legacyDonationIds.has(s.donationId));
+  const paid = currentShipments.filter((s) => s.paymentStatus === "paid");
   const real = paid.filter((s) => !isDemoRecord(s.razorpayPaymentId));
   const demo = paid.length - real.length;
-  const failed = allShipments.filter((s) => s.paymentStatus === "failed");
+  const failed = currentShipments.filter((s) => s.paymentStatus === "failed");
 
   const collected = real.reduce((sum, s) => sum + s.totalAmount, 0);
 
@@ -50,7 +62,14 @@ export default async function PaymentsPage() {
 
   return (
     <AdminShell>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Payments</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">Payments</h1>
+      <p className="text-sm text-gray-500 mb-6">
+        Figures below cover the current service only.
+        {legacyShipments.length > 0 && (
+          <> A further ₹{(legacyCollected / 100).toFixed(0)} was taken by the previous version of
+          the site across {legacyShipments.length} orders, and is excluded.</>
+        )}
+      </p>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <Stat label="Collected" value={`₹${(collected / 100).toFixed(0)}`} tone="bg-emerald-50 text-emerald-700" />

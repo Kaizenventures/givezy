@@ -22,3 +22,14 @@ export function statusLabel(value: string): string {
 export function statusColor(value: string): string {
   return DONATION_STATUSES.find((s) => s.value === value)?.color ?? "bg-gray-100 text-gray-600";
 }
+
+/**
+ * Statuses only the pre-refactor site ever produced. There are 170 such rows
+ * from the old site; they are real history but they are not work, so the admin
+ * keeps them out of the way rather than drowning today's bookings in them.
+ */
+export const LEGACY_STATUS_VALUES = ["pending", "contacted", "scheduled"] as const;
+
+export function isLegacyStatus(value: string): boolean {
+  return (LEGACY_STATUS_VALUES as readonly string[]).includes(value);
+}

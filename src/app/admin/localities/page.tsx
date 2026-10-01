@@ -5,6 +5,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { donations } from "@/lib/schema";
 import { AdminShell } from "../layout";
+import { isLegacyStatus } from "@/lib/donation-status";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,13 @@ export default async function LocalitiesPage() {
 
   const rows = await db.select().from(donations);
   // Abandoned checkouts aren't real demand — leave them out of the picture
-  const real = rows.filter((d) => d.status !== "pending_payment" && d.status !== "cancelled");
+  const real = rows.filter(
+    (d) =>
+      d.status !== "pending_payment" &&
+      d.status !== "cancelled" &&
+      // Old-site bookings would otherwise be the entire picture
+      !isLegacyStatus(d.status),
+  );
 
   const ACTIVE = ["paid", "bag_sent", "packed", "pickup_scheduled"];
 
@@ -47,7 +54,7 @@ export default async function LocalitiesPage() {
       <p className="text-sm text-gray-500 mb-8 max-w-2xl">
         Which parts of Hyderabad are actually giving. Useful for spotting clusters — if one pincode
         keeps coming up, that&apos;s where a single van run would collect the most in one trip.
-        Unpaid and cancelled bookings are excluded.
+        Unpaid, cancelled and old-site bookings are excluded.
       </p>
 
       {real.length === 0 ? (
