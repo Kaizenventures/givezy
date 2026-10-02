@@ -6,6 +6,7 @@ export const DONATION_STATUSES = [
   { value: "pickup_scheduled", label: "Pickup scheduled", color: "bg-amber-100 text-amber-700" },
   { value: "picked_up", label: "Picked up", color: "bg-teal-100 text-teal-700" },
   { value: "completed", label: "Completed", color: "bg-emerald-100 text-emerald-700" },
+  { value: "refunded", label: "Refunded", color: "bg-rose-100 text-rose-700" },
   { value: "cancelled", label: "Cancelled", color: "bg-gray-100 text-gray-500" },
   // Legacy values from the pre-v2 flow, kept so old rows still render
   { value: "pending", label: "Pending (legacy)", color: "bg-yellow-100 text-yellow-700" },
@@ -33,3 +34,14 @@ export const LEGACY_STATUS_VALUES = ["pending", "contacted", "scheduled"] as con
 export function isLegacyStatus(value: string): boolean {
   return (LEGACY_STATUS_VALUES as readonly string[]).includes(value);
 }
+
+/**
+ * Statuses that do not consume a pickup slot. An abandoned checkout never
+ * became a booking, and a cancelled or refunded one has been given back — in
+ * all three cases the capacity has to be released, or the caps slowly strangle
+ * the day with work nobody is doing.
+ *
+ * Capacity reads this rather than listing the statuses itself, so adding a
+ * status here is enough to free its slots.
+ */
+export const NON_CONSUMING_STATUSES = ["pending_payment", "cancelled", "refunded"] as const;

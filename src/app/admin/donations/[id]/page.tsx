@@ -9,8 +9,10 @@ import { AdminShell } from "../../layout";
 import DonationStatusUpdate from "@/components/DonationStatusUpdate";
 import FulfilPickupButton from "@/components/FulfilPickupButton";
 import ManualPickupForm from "@/components/ManualPickupForm";
+import RefundForm from "@/components/RefundForm";
 import { shiprocketConfigured } from "@/lib/shiprocket";
 import { getBags, findBag, bagLabel } from "@/lib/settings";
+import { refundedInFull } from "@/lib/refund";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +68,18 @@ export default async function DonationDetailPage({
     !shipment ? "No payment record for this pickup."
     : shipment.paymentStatus !== "paid" ? "Book the pickup once payment has cleared."
     : shipment.shiprocketOrderId ? "A Shiprocket pickup already exists."
+    : null;
+
+  const fullyRefunded = !!shipment && refundedInFull(shipment);
+  const refundableRupees = shipment
+    ? Math.round((shipment.totalAmount - shipment.refundAmount) / 100)
+    : 0;
+  const refundBlockedReason = !shipment
+    ? "No payment to refund."
+    : fullyRefunded
+    ? "Fully refunded."
+    : shipment.paymentStatus !== "paid"
+    ? "Only a paid booking can be refunded."
     : null;
 
   return (
@@ -139,6 +153,8 @@ export default async function DonationDetailPage({
                       ? "bg-green-100 text-green-700"
                       : shipment.paymentStatus === "failed"
                       ? "bg-red-100 text-red-700"
+                      : shipment.paymentStatus === "refunded"
+                      ? "bg-rose-100 text-rose-700"
                       : "bg-yellow-100 text-yellow-700"
                   }`}>
                     {shipment.paymentStatus.toUpperCase()}
@@ -188,6 +204,20 @@ export default async function DonationDetailPage({
                   <span>Total Paid</span>
                   <span>₹{(shipment.totalAmount / 100).toFixed(2)}</span>
                 </div>
+                {shipment.refundAmount > 0 && (
+                  <>
+                    <div className="flex justify-between text-rose-600">
+                      <span>Refunded</span>
+                      <span>−₹{(shipment.refundAmount / 100).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold text-gray-900 border-t pt-1">
+                      <span>Kept</span>
+                      <span>
+                        ₹{((shipment.totalAmount - shipment.refundAmount) / 100).toFixed(2)}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Tracking details */}
@@ -196,6 +226,26 @@ export default async function DonationDetailPage({
                   <div>
                     <dt className="text-gray-500">Razorpay Payment ID</dt>
                     <dd className="font-mono text-xs text-gray-700">{shipment.razorpayPaymentId}</dd>
+                  </div>
+                )}
+                {shipment.refundAmount > 0 && (
+                  <div>
+                    <dt className="text-gray-500">Refund</dt>
+                    <dd className="text-gray-700 text-xs">
+                      {fullyRefunded ? "Refunded in full" : "Partly refunded"}
+                      {shipment.refundedAt
+                        ? ` on ${new Date(shipment.refundedAt).toLocaleString("en-IN", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}`
+                        : ""}
+                      {shipment.refundReason ? ` — ${shipment.refundReason}` : ""}
+                      {shipment.razorpayRefundId ? (
+                        <span className="block font-mono text-gray-500 mt-0.5">
+                          {shipment.razorpayRefundId}
+                        </span>
+                      ) : null}
+                    </dd>
                   </div>
                 )}
                 {shipment.bookedManually && (
@@ -307,6 +357,12 @@ export default async function DonationDetailPage({
                 donationId={donation.id}
                 disabledReason={pickupBlockedReason}
                 startOpen={!shiprocketReady && !pickupBlockedReason}
+              />
+              <RefundForm
+                donationId={donation.id}
+                refundableRupees={refundableRupees}
+                partiallyRefunded={!!shipment && shipment.refundAmount > 0 && !fullyRefunded}
+                disabledReason={refundBlockedReason}
               />
               <a
                 href={`tel:${donation.donorPhone}`}

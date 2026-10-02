@@ -80,7 +80,7 @@ The courier has it. Press **Received** once it reaches us.
 | **Pickups** | Every pickup ever, with filters. Use this to look something up. |
 | **Follow-ups** | The full list of people who didn't finish paying. |
 | **Waitlist** | People who tried to book when we were full. Call them when slots free up and mark them Invited or Converted. |
-| **Payments** | Money collected, how people paid, and any payments that failed. |
+| **Payments** | Money collected after refunds, how people paid, what went back, and any payments that failed. |
 | **Areas** | Which parts of Hyderabad are donating most. |
 | **Leads** | People who left their details but haven't donated yet. |
 | **Settings** | Bags and prices, where you collect from, daily limits, and the words on the website. |
@@ -138,12 +138,51 @@ loses money. What's left over also has to pay for the bag and for posting it out
 This only works once Shiprocket is connected, and it checks *saved* prices — save
 first, then check.
 
-**The packing limit matters.** It's what donors are told they can fill the bag
-to, and what the courier is told the parcel weighs (plus the empty sack, about
-220 g). If donors regularly overfill, the courier charges more than you quoted.
+**The packing limit matters, and not in the way you'd expect.** It's what givers
+are told they can fill the bag to, and what the courier is told the parcel weighs
+— the limit plus the empty sack, about 220 g. If people regularly overfill, the
+courier charges more than you quoted.
+
+But couriers don't charge by the kilo, they charge in **slabs**. A 5.22 kg parcel
+and a 10 kg parcel cost exactly the same. So a limit that sits just over a slab
+boundary costs real money for not one extra book — a 5 kg limit plus the sack
+declares 5.22 kg and bills in the 10 kg slab, about ₹80 more per pickup than 4.5
+kg would.
+
+Underneath the packing limit the page now tells you which slab the bag bills in
+and how much room is left. If the limit has drifted over a boundary it turns red
+and offers to fix it in one click. **Read that line every time you change the
+limit or the bag.**
+
+If you ever want a genuinely bigger bag, 9.5 kg is the number — it fills the 10
+kg slab properly, so roughly double the books for about ₹80 more. That needs a
+bigger sack than the 35 x 50 cm one, and a higher price to match.
 
 **Fill one of each bag with real books and weigh it** before going live. The "fits
 about N books" and kilo figures are estimates until someone does.
+
+## Giving someone their money back
+
+Open the booking (**Pickups**, then click their name) and use **Refund this
+booking** in the Quick Actions box on the right. Leave the amount blank to refund
+the whole thing, or type a smaller number to refund part of it. The reason is for
+your own records.
+
+A **full refund** closes the booking. It disappears from your Today list and
+gives its pickup slot back, so someone else can book in its place that day.
+
+A **partial refund** leaves the pickup going ahead — use it when you want to give
+something back but still collect the books.
+
+You can also refund from the Razorpay dashboard if you prefer, and it will show up
+here within a few seconds. It works the other way round too, so you never have to
+remember to record it in two places.
+
+Refunds take a few working days to reach the giver's account. That is Razorpay
+and their bank, not us, and there is no way to speed it up.
+
+**Refunds cannot be undone from here.** If you refund by mistake, the only fix is
+to ask the person to book again.
 
 ## Changing the website text
 
@@ -159,6 +198,9 @@ status. If it still says "Paid", the bag hasn't been posted yet.
 
 **A payment failed.** Payments page shows the reason. "Insufficient funds" or a
 bank decline usually just needs them to try again with a different method.
+
+**Someone wants their money back.** See "Giving someone their money back" above.
+Refund it in full and the slot frees up for someone else the same day.
 
 **Someone's bag is much heavier than what they paid for.** The courier weighs it
 at pickup. There's no automatic way to charge the difference — call them, or

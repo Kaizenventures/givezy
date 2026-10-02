@@ -49,6 +49,19 @@ quietly hand out free pickups.
 5. Admin posts the bag, the giver confirms on WhatsApp, admin records the pickup
    — through Shiprocket when it is connected, by hand when it is not.
 
+Refunds mirror that shape: `recordRefund()` is reached from the admin panel and
+from the webhook's refund events, deduplicates on the Razorpay refund id, and on
+a full refund marks the donation `refunded` — which releases its capacity slot,
+because `checkCapacity()` reads `NON_CONSUMING_STATUSES` rather than listing
+statuses itself. `settlePayment()` refuses an already-refunded shipment, since
+Razorpay re-delivers `payment.captured`.
+
+Subscribe the webhook to `payment.captured`, `payment.failed`, `refund.created`
+and `refund.processed`.
+
+`npx tsx scripts/test-refunds.ts` exercises all of this against a throwaway
+database (`DATABASE_URL=file:/tmp/t.db`, after `node scripts/migrate.mjs`).
+
 Bag sizes and prices, the service area, daily caps, book categories and most site
 copy are admin-editable and live in the `settings` table. Changing them needs no
 deploy.
@@ -66,9 +79,21 @@ problems that only a clean container exposes.
 
 ## Things that will bite you
 
-**Keep schema changes additive.** Deploys run `drizzle-kit push --force`, which
-infers the schema rather than applying migrations, and will rebuild a table if a
-column definition changes. Add columns and tables; don't alter existing ones.
+**Keep schema changes additive.** Deploys run `scripts/migrate.mjs`, which applies
+`drizzle/*.sql` in order and skips statements already present. It is deliberately
+not `drizzle-kit push`, which needs a TTY, exits zero when it cannot get one, and
+once left production running the pre-refactor schema while the app started
+anyway. Add columns and tables; don't alter existing ones.
+
+**A saved setting beats the code.** Bags, prices, caps, copy and the service area
+live in the `settings` table, and once saved, editing `DEFAULT_BAGS` or any other
+default has no effect on a running install. Changing one of those for real means
+a data migration — see `drizzle/0006_packing_limit_slab.sql`.
+
+**Couriers charge by slab, not by the gram.** The packing limit plus the sack's
+tare is what gets declared, and a limit just over a boundary pays for a whole
+band it cannot use. `src/lib/courier-slabs.ts` works this out and Settings shows
+it live; it went unnoticed at ₹80 a pickup before that existed.
 
 **Next only traces what the server imports.** The image ships Next's standalone
 output, so `node_modules` contains just the files the running server reaches. The

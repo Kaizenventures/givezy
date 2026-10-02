@@ -20,7 +20,12 @@ sorted — readable ones towards reuse, the rest towards paper recycling.
 
 ## What it costs
 
-One bag: **₹499**, for up to **5 kg** of books, roughly 10 books.
+One bag: **₹499**, for **about 10 books** — a packing limit of 4.5 kg.
+
+The book count is the headline because it is the number people can actually
+judge; nobody knows what 4.5 kg of books looks like. The limit is 4.5 rather than
+a rounder 5 because couriers charge in weight bands, and 5 kg plus the empty sack
+tips into the next band up — about ₹80 more per pickup for not one extra book.
 
 That price is a starting point, not a final answer. It can be changed in the
 admin panel at any time without anyone touching the code.
@@ -33,7 +38,8 @@ admin panel at any time without anyone touching the code.
 2. They pick books, optionally add photos, and say what kind of books they are.
 3. They enter their address. The site checks whether we collect from their area
    while they type.
-4. They pay ₹499.
+4. They pay ₹499. If anything goes wrong afterwards it can be refunded in full
+   or in part, and the slot is released for someone else.
 5. They get a confirmation page and a printable receipt, and see the three steps
    that follow.
 6. A Givezy bag arrives in the post.
@@ -77,6 +83,8 @@ Every entry has call and WhatsApp buttons with the message already written.
 - Backs everything up every night
 - Notices people who filled in their address but didn't finish paying, and puts
   them on a follow-up list
+- Keeps refunds straight: a refund issued here or in the Razorpay dashboard shows
+  up in both, closes the booking and hands its pickup slot back to the day
 
 ## What still needs a person
 

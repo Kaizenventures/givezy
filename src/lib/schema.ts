@@ -70,6 +70,14 @@ export const shipments = sqliteTable("shipments", {
   razorpayPaymentId: text("razorpay_payment_id"),
   razorpaySignature: text("razorpay_signature"),
 
+  // Refunds. A refund can be partial, so the amount is recorded rather than
+  // inferred from paymentStatus — `refunded` means fully refunded, and a
+  // partial refund leaves the status `paid` with a non-zero refundAmount.
+  refundAmount: integer("refund_amount").notNull().default(0),
+  razorpayRefundId: text("razorpay_refund_id"),
+  refundReason: text("refund_reason"),
+  refundedAt: text("refunded_at"),
+
   // Shiprocket — created manually from admin once the donor confirms the bag is packed
   shiprocketOrderId: text("shiprocket_order_id"),
   shiprocketShipmentId: text("shiprocket_shipment_id"),

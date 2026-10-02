@@ -1,7 +1,8 @@
 import { db } from "./db";
 import { donations } from "./schema";
-import { and, gte, ne } from "drizzle-orm";
+import { and, gte, notInArray } from "drizzle-orm";
 import { getCaps, type Caps } from "./settings";
+import { NON_CONSUMING_STATUSES } from "./donation-status";
 
 export interface CapacityStatus {
   available: boolean;
@@ -34,8 +35,9 @@ function startOfMonth(d: Date): Date {
 }
 
 /**
- * A donation only consumes a slot once it is actually paid for —
- * abandoned `pending_payment` rows and cancellations must not eat capacity.
+ * A donation only consumes a slot while it is a live, paid-for booking.
+ * Abandoned checkouts, cancellations and refunds release theirs — see
+ * NON_CONSUMING_STATUSES.
  */
 async function countSince(since: Date): Promise<number> {
   const rows = await db
@@ -44,8 +46,7 @@ async function countSince(since: Date): Promise<number> {
     .where(
       and(
         gte(donations.createdAt, since.toISOString()),
-        ne(donations.status, "pending_payment"),
-        ne(donations.status, "cancelled"),
+        notInArray(donations.status, [...NON_CONSUMING_STATUSES]),
       ),
     );
   return rows.length;
