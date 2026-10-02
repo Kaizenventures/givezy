@@ -5,7 +5,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { donations } from "@/lib/schema";
 import { AdminShell } from "../layout";
-import { isLegacyStatus } from "@/lib/donation-status";
+import { isLegacyStatus, NON_CONSUMING_STATUSES } from "@/lib/donation-status";
 
 export const dynamic = "force-dynamic";
 
@@ -21,11 +21,11 @@ export default async function LocalitiesPage() {
   if (!session) redirect("/admin/login");
 
   const rows = await db.select().from(donations);
-  // Abandoned checkouts aren't real demand — leave them out of the picture
+  // Abandoned checkouts, cancellations and refunds aren't real demand — leave
+  // them out of the picture. Same list capacity uses, so the two never drift.
   const real = rows.filter(
     (d) =>
-      d.status !== "pending_payment" &&
-      d.status !== "cancelled" &&
+      !(NON_CONSUMING_STATUSES as readonly string[]).includes(d.status) &&
       // Old-site bookings would otherwise be the entire picture
       !isLegacyStatus(d.status),
   );

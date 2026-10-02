@@ -3,15 +3,26 @@ import { db } from "@/lib/db";
 import { shipments } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { getTrackingInfo } from "@/lib/shiprocket";
+import { isAdmin } from "@/lib/admin-guard";
 
 /**
  * GET /api/shipping/track/[donationId]
- * Get tracking info for a donation's shipment
+ * Get tracking info for a donation's shipment.
+ *
+ * Admin only. It was open, which made it the one public door that called an
+ * external service and wrote to the database on a plain GET — unauthenticated
+ * and unthrottled. Nothing in the app calls it, and there is no giver-facing
+ * tracking page yet, so closing it costs nothing. When that page is built it
+ * needs its own endpoint with a rate limit, not this one reopened.
  */
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ donationId: string }> }
 ) {
+  if (!(await isAdmin())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { donationId } = await params;
 
