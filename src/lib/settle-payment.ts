@@ -6,7 +6,7 @@ import { sendDonationNotices } from "./notify";
 import { isDemoRecord } from "./demo";
 
 export interface SettleResult {
-  status: "settled" | "already_paid" | "not_found";
+  status: "settled" | "already_paid" | "refunded" | "not_found";
   donationId?: string;
 }
 
@@ -30,6 +30,12 @@ export async function settlePayment(params: {
   if (!shipment) return { status: "not_found" };
   if (shipment.paymentStatus === "paid") {
     return { status: "already_paid", donationId: shipment.donationId };
+  }
+  // Razorpay can re-deliver payment.captured long after the fact, including
+  // after a refund. Settling again would mark a refunded booking paid, put it
+  // back in the worklist and re-send the confirmation email.
+  if (shipment.paymentStatus === "refunded" || shipment.refundAmount > 0) {
+    return { status: "refunded", donationId: shipment.donationId };
   }
 
   const now = new Date().toISOString();

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2, Save, Plus, Trash2 } from "lucide-react";
+import { slabFit } from "@/lib/courier-slabs";
 import type { Bag, Caps, SiteContent, Genre, ServiceArea } from "@/lib/settings";
 import ServiceAreaMap from "@/components/ServiceAreaMap";
 import ServiceAreaTester from "@/components/ServiceAreaTester";
@@ -138,6 +139,9 @@ export default function AdminSettingsForm({
                 <Labeled label="Packing limit (kg)">
                   <input type="number" min={1} step="0.5" value={b.maxKg} onChange={(e) => updateBag(i, { maxKg: Number(e.target.value) })} className={inp} />
                 </Labeled>
+                <div className="col-span-2 md:col-span-4">
+                  <SlabNote bag={b} onFix={(maxKg) => updateBag(i, { maxKg })} />
+                </div>
                 <Labeled label="Hint shown to donors" className="col-span-2">
                   <input value={b.hint} onChange={(e) => updateBag(i, { hint: e.target.value })} className={inp} />
                 </Labeled>
@@ -163,7 +167,8 @@ export default function AdminSettingsForm({
                 </div>
                 <p className="text-xs text-gray-400 mt-2">
                   The courier is told this bag weighs {((b.maxKg * 1000 + b.tareGrams) / 1000).toFixed(2)} kg —
-                  the packing limit plus the empty sack.
+                  the packing limit plus the empty sack. That is the number the slab is worked out
+                  from, so the empty sack&apos;s weight matters as much as the limit.
                 </p>
                 <Labeled label="Option ID — changing this unlinks past bookings" className="mt-3 max-w-xs">
                   <input value={b.id} onChange={(e) => updateBag(i, { id: e.target.value })} className={inp} />
@@ -194,7 +199,7 @@ export default function AdminSettingsForm({
                   widthCm: 40,
                   lengthCm: 60,
                   approxBooks: 15,
-                  maxKg: 8,
+                  maxKg: 9.5,
                   pricePaise: 24900,
                   packedCm: [50, 35, 20],
                   tareGrams: 220,
@@ -527,5 +532,59 @@ function PriceCheck() {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * What the courier will actually bill for this bag, shown while the limit is
+ * being typed. A packing limit that sits just over a slab boundary costs real
+ * money for no extra books, and nothing used to say so — it went unnoticed for
+ * months at ₹80 a pickup.
+ */
+function SlabNote({
+  bag,
+  onFix,
+}: {
+  bag: { maxKg: number; tareGrams: number };
+  onFix: (maxKg: number) => void;
+}) {
+  const { slab, declaredGrams, headroomGrams, waste } = slabFit(bag);
+  const declaredKg = (declaredGrams / 1000).toFixed(2);
+
+  if (!slab) {
+    return (
+      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        Declared weight {declaredKg} kg is heavier than any courier slab we have a rate for. Get a
+        quote before selling this bag.
+      </p>
+    );
+  }
+
+  if (waste && waste.suggestedMaxKg > 0) {
+    return (
+      <div className="text-xs bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 text-rose-900">
+        <p>
+          Declared weight {declaredKg} kg only just crosses into the {slab.maxGrams / 1000} kg slab
+          (about ₹{slab.pricePaise / 100}), leaving {(headroomGrams / 1000).toFixed(2)} kg paid for
+          and unusable. A limit of {waste.suggestedMaxKg} kg bills in the slab below and saves about
+          ₹{waste.savingPaise / 100} on every pickup.
+        </p>
+        <button
+          type="button"
+          onClick={() => onFix(waste.suggestedMaxKg)}
+          className="mt-1.5 font-semibold underline hover:no-underline"
+        >
+          Set it to {waste.suggestedMaxKg} kg
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <p className="text-xs text-gray-500">
+      Declared weight {declaredKg} kg → the {slab.maxGrams / 1000} kg courier slab, about ₹
+      {slab.pricePaise / 100} a pickup. {(headroomGrams / 1000).toFixed(2)} kg of room before the
+      next slab.
+    </p>
   );
 }

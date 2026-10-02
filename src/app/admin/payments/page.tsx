@@ -9,6 +9,7 @@ import { AdminShell } from "../layout";
 import { isDemoRecord } from "@/lib/demo";
 import { bookingRef } from "@/lib/worklist";
 import { isLegacyStatus } from "@/lib/donation-status";
+import { refundedInFull } from "@/lib/refund";
 
 export const dynamic = "force-dynamic";
 
@@ -41,20 +42,29 @@ export default async function PaymentsPage() {
     .reduce((sum, s) => sum + s.totalAmount, 0);
 
   const currentShipments = allShipments.filter((s) => !legacyDonationIds.has(s.donationId));
-  const paid = currentShipments.filter((s) => s.paymentStatus === "paid");
-  const real = paid.filter((s) => !isDemoRecord(s.razorpayPaymentId));
-  const demo = paid.length - real.length;
+  // A refunded shipment still took money once, so it belongs in the figures —
+  // as a payment that came in and went back out, not as one that never existed.
+  const settled = currentShipments.filter(
+    (s) => s.paymentStatus === "paid" || s.paymentStatus === "refunded",
+  );
+  const real = settled.filter((s) => !isDemoRecord(s.razorpayPaymentId));
+  const demo = settled.length - real.length;
   const failed = currentShipments.filter((s) => s.paymentStatus === "failed");
 
-  const collected = real.reduce((sum, s) => sum + s.totalAmount, 0);
+  const gross = real.reduce((sum, s) => sum + s.totalAmount, 0);
+  const refunded = real.reduce((sum, s) => sum + s.refundAmount, 0);
+  // What is actually in the bank: everything taken, less everything given back.
+  const collected = gross - refunded;
+  const refundedBookings = real.filter((s) => s.refundAmount > 0);
+  const liveBookings = real.filter((s) => !refundedInFull(s));
 
   // Where couriers cost more than we charged
-  const underwater = real.filter(
+  const underwater = liveBookings.filter(
     (s) => s.estimatedCourierCost !== null && s.estimatedCourierCost > s.totalAmount,
   );
 
   const methodCounts = new Map<string, number>();
-  for (const s of real) {
+  for (const s of liveBookings) {
     const key = s.paymentMethod || "unknown";
     methodCounts.set(key, (methodCounts.get(key) || 0) + 1);
   }
@@ -65,6 +75,9 @@ export default async function PaymentsPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Payments</h1>
       <p className="text-sm text-gray-500 mb-6">
         Figures below cover the current service only.
+        {refunded > 0 && (
+          <> ₹{(gross / 100).toFixed(0)} was taken and ₹{(refunded / 100).toFixed(0)} went back.</>
+        )}
         {legacyShipments.length > 0 && (
           <> A further ₹{(legacyCollected / 100).toFixed(0)} was taken by the previous version of
           the site across {legacyShipments.length} orders, and is excluded.</>
@@ -72,9 +85,14 @@ export default async function PaymentsPage() {
       </p>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Stat label="Collected" value={`₹${(collected / 100).toFixed(0)}`} tone="bg-emerald-50 text-emerald-700" />
-        <Stat label="Paid bookings" value={real.length} tone="bg-gray-100 text-gray-900" />
-        <Stat label="Failed payments" value={failed.length} tone="bg-rose-50 text-rose-700" />
+        <Stat label="Collected, after refunds" value={`₹${(collected / 100).toFixed(0)}`} tone="bg-emerald-50 text-emerald-700" />
+        <Stat label="Live paid bookings" value={liveBookings.length} tone="bg-gray-100 text-gray-900" />
+        <Stat
+          label={refunded > 0 ? `Refunded (${refundedBookings.length})` : "Refunded"}
+          value={`₹${(refunded / 100).toFixed(0)}`}
+          tone="bg-rose-50 text-rose-700"
+        />
+        <Stat label="Failed payments" value={failed.length} tone="bg-gray-100 text-gray-500" />
         {demo > 0 && <Stat label="Demo (not real)" value={demo} tone="bg-amber-50 text-amber-700" />}
       </div>
 
@@ -96,7 +114,7 @@ export default async function PaymentsPage() {
           <h2 className="font-semibold text-gray-900 mb-3">How people paid</h2>
           <div className="space-y-2">
             {methods.map(([method, count]) => {
-              const pct = Math.round((count / real.length) * 100);
+              const pct = Math.round((count / liveBookings.length) * 100);
               return (
                 <div key={method}>
                   <div className="flex justify-between text-sm mb-1">

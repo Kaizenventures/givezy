@@ -59,12 +59,17 @@ export interface SiteContent {
 }
 
 /*
- * Sizes are the three sacks the team is sourcing (flat, stitched kraft paper).
- * Capacities are estimates for books in a pillow-filled sack and should be
- * confirmed by filling one of each and weighing it. Books are dense enough
- * that their real weight exceeds courier volumetric weight at every size, so
- * the courier bills on actual weight — which is why maxKg drives the price.
- * Prices are placeholders until confirmed against real Shiprocket quotes.
+ * One sack (flat, stitched kraft paper), the 35x50 cm one the team has.
+ * Capacity is an estimate for books in a pillow-filled sack and should be
+ * confirmed by filling one and weighing it. Books are dense enough that their
+ * real weight exceeds courier volumetric weight, so the courier bills on actual
+ * weight — which is why maxKg drives the cost.
+ *
+ * The packing limit is 4.5 kg rather than a rounder 5 because couriers charge
+ * by slab: 4.5 kg plus the 220 g sack declares 4.72 kg and bills in the 5 kg
+ * slab, while a 5 kg limit declares 5.22 kg and bills in the 10 kg slab for
+ * ~Rs 80 more and not one extra book. Donors are shown the book count first,
+ * which is the number they can actually judge; see courier-slabs.ts.
  */
 export const DEFAULT_BAGS: Bag[] = [
   {
@@ -74,7 +79,7 @@ export const DEFAULT_BAGS: Bag[] = [
     widthCm: 35,
     lengthCm: 50,
     approxBooks: 10,
-    maxKg: 5,
+    maxKg: 4.5,
     pricePaise: 49900,
     packedCm: [42, 32, 18],
     tareGrams: 220,
