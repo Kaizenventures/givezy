@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/rate-limit";
+import { formatIndianMobile } from "@/lib/phone";
 import { db } from "@/lib/db";
 import { leads } from "@/lib/schema";
 
@@ -20,7 +21,10 @@ export async function POST(req: NextRequest) {
       .values({
         name: name ? String(name).slice(0, 120) : null,
         email: email ? String(email).slice(0, 200) : null,
-        phone: phone ? String(phone).slice(0, 20) : null,
+        // A lead is low-stakes, so an odd number is kept as typed rather than
+        // thrown away — but the usual leading zero is normalised, because it
+        // otherwise builds a WhatsApp link to nobody.
+        phone: phone ? formatIndianMobile(String(phone).trim()).slice(0, 20) : null,
         city: city ? String(city).slice(0, 80) : null,
         source: source === "homepage_exit" ? "homepage_exit" : "homepage_timed",
       })

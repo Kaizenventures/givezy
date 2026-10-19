@@ -47,15 +47,24 @@ export default function WorkCard({
         >
           <Phone className="w-4 h-4" />
         </a>
-        <a
-          href={`https://wa.me/${wa}${waMessage ? `?text=${encodeURIComponent(waMessage.replace("{ref}", ref).replace("{name}", d.donorName))}` : ""}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Message on WhatsApp"
-          className="p-2 rounded-lg border border-gray-300 text-emerald-600 hover:bg-emerald-50"
-        >
-          <MessageCircle className="w-4 h-4" />
-        </a>
+        {wa ? (
+          <a
+            href={`https://wa.me/${wa}${waMessage ? `?text=${encodeURIComponent(waMessage.replace("{ref}", ref).replace("{name}", d.donorName))}` : ""}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Message on WhatsApp"
+            className="p-2 rounded-lg border border-gray-300 text-emerald-600 hover:bg-emerald-50"
+          >
+            <MessageCircle className="w-4 h-4" />
+          </a>
+        ) : (
+          <span
+            title={`${d.donorPhone} isn't a usable mobile number — WhatsApp can't be opened`}
+            className="p-2 rounded-lg border border-dashed border-gray-300 text-gray-300 cursor-not-allowed"
+          >
+            <MessageCircle className="w-4 h-4" />
+          </span>
+        )}
         {children}
       </div>
     </div>

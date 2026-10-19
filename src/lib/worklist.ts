@@ -3,6 +3,7 @@ import { donations, shipments, waitlist } from "./schema";
 import { desc, eq } from "drizzle-orm";
 import type { Donation, Shipment } from "./schema";
 import { getBags, bagLabel, type Bag } from "./settings";
+import { whatsappDigits } from "./phone";
 
 /** How long after starting checkout an unpaid donation counts as abandoned. */
 export const ABANDONED_AFTER_MINUTES = 30;
@@ -67,10 +68,14 @@ export async function getWorklist(now: Date = new Date()): Promise<Worklist> {
   };
 }
 
-/** Digits-only phone for wa.me links. */
-export function whatsappNumber(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  return digits.startsWith("91") ? digits : `91${digits}`;
+/**
+ * Digits for a wa.me link, or null when the number isn't a usable mobile.
+ * The old version prefixed "91" onto anything that didn't already start with
+ * it, so a number typed with the usual leading zero became 91 0 9550478555 —
+ * a link to nobody. Better to have no button than a broken one.
+ */
+export function whatsappNumber(phone: string): string | null {
+  return whatsappDigits(phone);
 }
 
 export function bookingRef(donationId: string): string {
