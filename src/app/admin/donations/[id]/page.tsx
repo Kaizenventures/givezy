@@ -13,6 +13,7 @@ import RefundForm from "@/components/RefundForm";
 import { shiprocketConfigured } from "@/lib/shiprocket";
 import { getBags, findBag, bagLabel } from "@/lib/settings";
 import { refundedInFull } from "@/lib/refund";
+import { whatsappDigits } from "@/lib/phone";
 
 export const dynamic = "force-dynamic";
 
@@ -370,9 +371,9 @@ export default async function DonationDetailPage({
               >
                 Call Donor
               </a>
-              {donation.whatsappOptin && (
+              {donation.whatsappOptin && whatsappDigits(donation.donorPhone) && (
                 <a
-                  href={`https://wa.me/91${donation.donorPhone.replace(/\D/g, "").replace(/^91/, "")}`}
+                  href={`https://wa.me/${whatsappDigits(donation.donorPhone)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full text-center py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"

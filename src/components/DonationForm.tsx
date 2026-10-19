@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, Shirt, Camera, X, Plus, Loader2, Package, ArrowRight, Lock } from "lucide-react";
+import { phoneInputDigits, normalizeIndianMobile, formatIndianMobile } from "@/lib/phone";
 
 interface Bucket {
   id: string;
@@ -167,17 +168,18 @@ export default function DonationForm() {
     });
   }
 
+  // Holds digits only. The "+91" is rendered beside the input rather than
+  // inside its value — when it lived in the value, every keystroke re-read the
+  // prefix's own "91" as part of the number and the field filled itself with
+  // 9191919... and stopped accepting input after four keypresses.
   function formatPhone(val: string) {
-    let digits = val.replace(/\D/g, "");
-    if (digits.startsWith("91") && digits.length > 10) digits = digits.slice(2);
-    if (digits.length > 10) digits = digits.slice(0, 10);
-    setDonorPhone(digits ? `+91 ${digits}` : "");
+    setDonorPhone(phoneInputDigits(val));
   }
 
   const validate = useCallback((): boolean => {
     const errs: Record<string, string> = {};
     if (!donorName.trim()) errs.donorName = "Please enter your name";
-    if (donorPhone.replace(/\D/g, "").length < 10) errs.donorPhone = "Enter a valid 10-digit phone number";
+    if (!normalizeIndianMobile(donorPhone)) errs.donorPhone = "Enter a 10-digit mobile number";
     if (donorEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(donorEmail)) errs.donorEmail = "Enter a valid email address";
     if (!donorAddress.trim()) errs.donorAddress = "Please enter your pickup address";
     if (donorPincode.length !== 6) errs.donorPincode = "Pincode must be 6 digits";
@@ -201,7 +203,7 @@ export default function DonationForm() {
       formData.append("weightBucket", bucketId);
       genres.forEach((g) => formData.append("genres", g));
       formData.append("donorName", donorName);
-      formData.append("donorPhone", donorPhone);
+      formData.append("donorPhone", formatIndianMobile(donorPhone));
       formData.append("donorEmail", donorEmail);
       formData.append("donorAddress", donorAddress);
       formData.append("donorPincode", donorPincode);
@@ -290,10 +292,10 @@ export default function DonationForm() {
   ]);
 
   async function handleWaitlist() {
-    if (!donorName.trim() || donorPhone.replace(/\D/g, "").length < 10) {
+    if (!donorName.trim() || !normalizeIndianMobile(donorPhone)) {
       setFieldErrors({
         ...(donorName.trim() ? {} : { donorName: "Please enter your name" }),
-        ...(donorPhone.replace(/\D/g, "").length >= 10 ? {} : { donorPhone: "Enter a valid 10-digit phone number" }),
+        ...(normalizeIndianMobile(donorPhone) ? {} : { donorPhone: "Enter a 10-digit mobile number" }),
       });
       return;
     }
@@ -304,7 +306,7 @@ export default function DonationForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: donorName, phone: donorPhone, email: donorEmail,
+          name: donorName, phone: formatIndianMobile(donorPhone), email: donorEmail,
           pincode: donorPincode, category, weightBucket: bucketId,
         }),
       });
@@ -367,10 +369,10 @@ export default function DonationForm() {
         <h2 className="text-2xl font-bold text-gray-900 mb-2">You&apos;re on the list</h2>
         <p className="text-gray-500 text-sm max-w-sm mx-auto">
           {paymentsDown
-            ? `We'll reach out on ${donorPhone} the moment doorstep pickups go live.`
+            ? `We'll reach out on ${formatIndianMobile(donorPhone)} the moment doorstep pickups go live.`
             : outsideArea
-            ? `We'll message ${donorPhone} as soon as we start collecting from your area.`
-            : `You're at the front of tomorrow's queue. We'll message ${donorPhone} to confirm your pickup — nothing to pay now.`}
+            ? `We'll message ${formatIndianMobile(donorPhone)} as soon as we start collecting from your area.`
+            : `You're at the front of tomorrow's queue. We'll message ${formatIndianMobile(donorPhone)} to confirm your pickup — nothing to pay now.`}
         </p>
       </div>
     );
@@ -623,13 +625,22 @@ export default function DonationForm() {
             />
           </Field>
           <Field label="Mobile" required error={fieldErrors.donorPhone}>
-            <input
-              type="tel"
-              value={donorPhone}
-              onChange={(e) => formatPhone(e.target.value)}
-              placeholder="+91 9876543210"
-              className={inputClass(!!fieldErrors.donorPhone)}
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none select-none">
+                +91
+              </span>
+              <input
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel-national"
+                maxLength={10}
+                value={donorPhone}
+                onChange={(e) => formatPhone(e.target.value)}
+                placeholder="9876543210"
+                aria-label="Mobile number, 10 digits"
+                className={`${inputClass(!!fieldErrors.donorPhone)} !pl-12`}
+              />
+            </div>
           </Field>
         </div>
 

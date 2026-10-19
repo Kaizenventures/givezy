@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { normalizeIndianMobile } from "@/lib/phone";
 import { donations, shipments } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { writeFile, mkdir } from "fs/promises";
@@ -88,6 +89,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "A valid 6-digit pincode is required" }, { status: 400 });
     }
 
+    // The phone is how a pickup actually gets arranged, so an unusable one is
+    // a booking we cannot fulfil. Seven of these reached the database before
+    // the server started checking — the client was the only thing looking.
+    const normalizedPhone = normalizeIndianMobile(donorPhone);
+    if (!normalizedPhone) {
+      return NextResponse.json(
+        { error: "A valid 10-digit Indian mobile number is required" },
+        { status: 400 },
+      );
+    }
+
     // Never take money for a pickup we can't reach. The client checks this too,
     // but the client can be skipped.
     const service = await checkServiceable(donorPincode);
@@ -163,7 +175,7 @@ export async function POST(req: NextRequest) {
         genres: JSON.stringify(genres),
         status: "pending_payment",
         donorName,
-        donorPhone,
+        donorPhone: `+91 ${normalizedPhone}`,
         donorEmail: donorEmail || null,
         donorAddress,
         donorPincode,
@@ -220,7 +232,7 @@ export async function POST(req: NextRequest) {
         amount: bucket.pricePaise,
         currency: "INR",
         bucket: { id: bucket.id, label: bucket.label, maxKg: bucket.maxKg },
-        donor: { name: donorName, email: donorEmail, phone: donorPhone },
+        donor: { name: donorName, email: donorEmail, phone: `+91 ${normalizedPhone}` },
       },
       { status: 201 },
     );
