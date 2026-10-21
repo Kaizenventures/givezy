@@ -82,6 +82,7 @@ The courier has it. Press **Received** once it reaches us.
 | **Waitlist** | People who tried to book when we were full. Call them when slots free up and mark them Invited or Converted. |
 | **Payments** | Money collected after refunds, how people paid, what went back, and any payments that failed. |
 | **Areas** | Which parts of Hyderabad are donating most. |
+| **Visitors** | How many people are coming to the site, where from, and where they drop off. |
 | **Leads** | People who left their details but haven't donated yet. |
 | **Settings** | Bags and prices, where you collect from, daily limits, and the words on the website. |
 | **Export** | Downloads a spreadsheet. Add `?type=leads` or `?type=waitlist` to the address for those instead. |
@@ -160,6 +161,37 @@ bigger sack than the 35 x 50 cm one, and a higher price to match.
 
 **Fill one of each bag with real books and weigh it** before going live. The "fits
 about N books" and kilo figures are estimates until someone does.
+
+## Seeing who's visiting
+
+**Visitors** in the admin menu. Last 30 days, updated as people arrive.
+
+The number worth looking at is **Where people drop off**. It shows four bars:
+how many people visited, how many opened the booking form, how many filled it
+in, and how many paid. The gap between two bars is the question:
+
+- A big fall from **visited** to **opened the form** means the homepage isn't
+  convincing people. That's a words-and-pictures problem.
+- A big fall from **filled it in** to **paid** usually means the price. People
+  don't type their home address unless they mean it.
+
+**Where they came from** tells you whether the Instagram post is doing anything.
+Be aware that "Direct" is inflated — WhatsApp, Instagram's in-app browser and
+most apps strip the referrer, so a lot of social traffic lands there.
+
+A few things to know so the numbers don't mislead you:
+
+- **Visitors are counted per day.** Someone who comes back on Tuesday and
+  Thursday is two visitors, not one. There's no way to follow a person across
+  days, deliberately.
+- **Refreshing doesn't inflate it.** One person reloading five times is five
+  views and one visitor.
+- **Admin traffic isn't counted.** Your own clicking around doesn't show up.
+- **Counting starts from the day this went live.** There's no history before it.
+
+Nothing identifying is stored — no cookies, no third-party tracker, no IP
+addresses, and nothing is sent anywhere outside our own server. That's also why
+the site needs no cookie banner.
 
 ## Giving someone their money back
 
