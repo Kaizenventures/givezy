@@ -21,8 +21,8 @@ const VALUES = [
     icon: Users,
     title: "Community first",
     description: "Everything is sorted by hand here in Hyderabad — what can be reused is passed on, the rest goes for recycling.",
-    color: "text-emerald-600",
-    bg: "bg-emerald-50",
+    color: "text-brand",
+    bg: "bg-brand/8",
   },
   {
     icon: BookOpen,
@@ -47,16 +47,16 @@ export default function AboutContent() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-emerald-50 via-teal-50 to-amber-50 py-20 px-4">
+      <section className="bg-gradient-to-br from-brand/8 via-teal-50 to-amber-50 py-20 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <AnimatedSection variants={slideInLeft}>
-              <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wider mb-3">
+              <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-3">
                 Our story
               </p>
               <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight mb-6">
                 Making generosity{" "}
-                <span className="text-emerald-600">effortless</span>
+                <span className="text-brand">effortless</span>
               </h1>
               <div className="space-y-4 text-gray-600 leading-relaxed">
                 <p>
@@ -86,7 +86,7 @@ export default function AboutContent() {
       <section className="py-20 px-4">
         <div className="max-w-5xl mx-auto">
           <AnimatedSection className="text-center mb-14">
-            <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wider mb-2">
+            <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-2">
               What drives us
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Our values</h2>
@@ -143,18 +143,18 @@ export default function AboutContent() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-4 bg-gradient-to-br from-emerald-600 to-teal-700">
+      <section className="py-20 px-4 bg-gradient-to-br from-brand to-teal-700">
         <div className="max-w-2xl mx-auto text-center">
           <AnimatedSection>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Ready to make a difference?
             </h2>
-            <p className="text-emerald-100 text-lg mb-8">
+            <p className="text-brand/10 text-lg mb-8">
               It takes less than 2 minutes. We&apos;ll handle the rest.
             </p>
             <Link
               href="/donate"
-              className="inline-flex items-center gap-2 bg-white text-emerald-700 px-8 py-3.5 rounded-xl font-bold text-lg hover:bg-emerald-50 transition-all hover:shadow-lg"
+              className="inline-flex items-center gap-2 bg-white text-brand px-8 py-3.5 rounded-xl font-bold text-lg hover:bg-brand/8 transition-all hover:shadow-lg"
             >
               Give Now
               <ArrowRight className="w-5 h-5" />

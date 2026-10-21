@@ -92,7 +92,7 @@ export default function AdminSettingsForm({
         <button
           onClick={save}
           disabled={saving}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-brand rounded-lg hover:bg-brand-dark disabled:opacity-50"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Save changes
@@ -103,7 +103,7 @@ export default function AdminSettingsForm({
         <div
           className={`mb-5 p-3 rounded-lg text-sm ${
             message.kind === "ok"
-              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+              ? "bg-brand/8 text-brand border border-brand/25"
               : "bg-red-50 text-red-700 border border-red-200"
           }`}
         >
@@ -213,7 +213,7 @@ export default function AdminSettingsForm({
                 },
               ])
             }
-            className="inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium hover:underline"
+            className="inline-flex items-center gap-1.5 text-sm text-brand font-medium hover:underline"
           >
             <Plus className="w-4 h-4" />
             Add a bag size
@@ -259,7 +259,7 @@ export default function AdminSettingsForm({
             </div>
             <button
               onClick={() => setGenres((prev) => [...prev, { id: `genre-${prev.length + 1}`, label: "New category" }])}
-              className="inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium hover:underline mt-3"
+              className="inline-flex items-center gap-1.5 text-sm text-brand font-medium hover:underline mt-3"
             >
               <Plus className="w-4 h-4" />
               Add category
@@ -364,7 +364,7 @@ export default function AdminSettingsForm({
               type="checkbox"
               checked={content.clothesComingSoon}
               onChange={(e) => setContent({ ...content, clothesComingSoon: e.target.checked })}
-              className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+              className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
             />
             <span className="text-sm text-gray-700">
               Clothes are &ldquo;launching soon&rdquo; (uncheck to start accepting clothes)
@@ -454,7 +454,7 @@ export default function AdminSettingsForm({
               onClick={() =>
                 setContent({ ...content, faqs: [...(content.faqs ?? []), { q: "", a: "" }] })
               }
-              className="mt-3 inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium hover:underline"
+              className="mt-3 inline-flex items-center gap-1.5 text-sm text-brand font-medium hover:underline"
             >
               <Plus className="w-4 h-4" />
               Add a question
@@ -467,7 +467,7 @@ export default function AdminSettingsForm({
 }
 
 const inp =
-  "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none";
+  "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand outline-none";
 
 function Labeled({
   label,
@@ -584,7 +584,7 @@ function PriceCheck() {
                         </>
                       )}
                     </td>
-                    <td className={`py-2.5 font-medium tabular-nums ${diff === null ? "text-gray-400" : diff < 0 ? "text-red-600" : "text-emerald-600"}`}>
+                    <td className={`py-2.5 font-medium tabular-nums ${diff === null ? "text-gray-400" : diff < 0 ? "text-red-600" : "text-brand"}`}>
                       {diff === null ? "—" : diff < 0 ? `−${rupees(-diff)} loss` : rupees(diff)}
                     </td>
                   </tr>

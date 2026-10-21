@@ -363,7 +363,7 @@ export default function DonationForm() {
   if (waitlistDone) {
     return (
       <div className="max-w-xl mx-auto text-center py-12">
-        <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4">
+        <div className="w-14 h-14 rounded-full bg-brand/10 text-brand flex items-center justify-center mx-auto mb-4">
           <Package className="w-7 h-7" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">You&apos;re on the list</h2>
@@ -438,11 +438,11 @@ export default function DonationForm() {
             config?.content.clothesComingSoon !== false
               ? "border-gray-200 bg-gray-50 cursor-not-allowed opacity-70"
               : category === "clothes"
-              ? "border-emerald-400 bg-emerald-50"
+              ? "border-brand bg-brand/8"
               : "border-gray-200 hover:border-gray-300"
           }`}
         >
-          <Shirt className="w-7 h-7 text-emerald-600" />
+          <Shirt className="w-7 h-7 text-brand" />
           <p className="mt-2 font-semibold text-gray-900">Clothes</p>
           {config?.content.clothesComingSoon !== false && (
             <p className="text-xs text-gray-400 mt-0.5">Launching soon</p>
@@ -489,7 +489,7 @@ export default function DonationForm() {
         {photos.length < MAX_PHOTOS && (
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="aspect-square rounded-xl border-2 border-dashed border-gray-300 text-gray-400 hover:border-emerald-400 hover:text-emerald-600 transition-colors flex flex-col items-center justify-center gap-1"
+            className="aspect-square rounded-xl border-2 border-dashed border-gray-300 text-gray-400 hover:border-brand/40 hover:text-brand transition-colors flex flex-col items-center justify-center gap-1"
           >
             {photos.length === 0 ? <Camera className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
             <span className="text-[11px] font-medium">{photos.length === 0 ? "Add photo" : "Add more"}</span>
@@ -515,7 +515,7 @@ export default function DonationForm() {
                   onClick={() => toggleGenre(g.id)}
                   className={`px-3.5 py-2 rounded-full border text-sm font-medium transition-all ${
                     on
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                      ? "border-brand bg-brand/8 text-brand"
                       : "border-gray-200 text-gray-600 hover:border-gray-300"
                   }`}
                 >
@@ -542,7 +542,7 @@ export default function DonationForm() {
         activeBuckets.map((b) => (
           <div
             key={b.id}
-            className="flex items-center gap-4 p-4 rounded-xl border border-emerald-500 bg-emerald-50 mb-2"
+            className="flex items-center gap-4 p-4 rounded-xl border border-brand bg-brand/8 mb-2"
           >
             <BagDrawing
               widthCm={b.widthCm}
@@ -551,11 +551,11 @@ export default function DonationForm() {
               className="w-20 h-28 shrink-0"
             />
             <div>
-              <p className="text-base font-semibold text-emerald-800">{b.label}</p>
-              <p className="text-sm text-emerald-700 mt-0.5">
+              <p className="text-base font-semibold text-brand-dark">{b.label}</p>
+              <p className="text-sm text-brand mt-0.5">
                 Holds about {b.approxBooks} books — up to {b.maxKg} kg
               </p>
-              <p className="text-xs text-emerald-600/80 mt-1 tabular-nums">
+              <p className="text-xs text-brand/80 mt-1 tabular-nums">
                 {b.widthCm} × {b.lengthCm} cm
               </p>
             </div>
@@ -573,21 +573,21 @@ export default function DonationForm() {
                 aria-checked={on}
                 onClick={() => setBucketId(b.id)}
                 className={`p-3 rounded-xl border text-left transition-all flex sm:flex-col items-center sm:items-stretch gap-3 ${
-                  on ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-gray-300"
+                  on ? "border-brand bg-brand/8" : "border-gray-200 hover:border-gray-300"
                 }`}
               >
                 <BagDrawing widthCm={b.widthCm} lengthCm={b.lengthCm} scale={drawScale} />
                 <span className="flex-1">
-                  <span className={`block text-sm font-semibold ${on ? "text-emerald-700" : "text-gray-800"}`}>
+                  <span className={`block text-sm font-semibold ${on ? "text-brand" : "text-gray-800"}`}>
                     {b.label}
                   </span>
                   <span className="block text-xs text-gray-400 mt-0.5 tabular-nums">
                     {b.widthCm} × {b.lengthCm} cm
                   </span>
-                  <span className={`block text-xs mt-1.5 ${on ? "text-emerald-700" : "text-gray-600"}`}>
+                  <span className={`block text-xs mt-1.5 ${on ? "text-brand" : "text-gray-600"}`}>
                     About {b.approxBooks} books · up to {b.maxKg} kg
                   </span>
-                  <span className={`block text-sm font-bold mt-1.5 ${on ? "text-emerald-700" : "text-gray-700"}`}>
+                  <span className={`block text-sm font-bold mt-1.5 ${on ? "text-brand" : "text-gray-700"}`}>
                     {b.priceDisplay}
                   </span>
                 </span>
@@ -676,7 +676,7 @@ export default function DonationForm() {
             />
             {checkingArea && <p className="text-xs text-gray-400 mt-1">Checking your area…</p>}
             {!checkingArea && service?.status === "ok" && (
-              <p className="text-xs text-emerald-600 mt-1">We collect from your area.</p>
+              <p className="text-xs text-brand mt-1">We collect from your area.</p>
             )}
             {!checkingArea && outsideArea && (
               <p className="text-xs text-amber-600 mt-1">We don&apos;t reach this pincode yet.</p>
@@ -698,7 +698,7 @@ export default function DonationForm() {
             type="checkbox"
             checked={whatsappOptin}
             onChange={(e) => setWhatsappOptin(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
           />
           <span className="text-sm text-gray-600">Send me pickup updates on WhatsApp</span>
         </label>
@@ -723,7 +723,7 @@ export default function DonationForm() {
           <button
             onClick={handlePay}
             disabled={submitting || !selectedBucket}
-            className="w-full mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:shadow-emerald-200"
+            className="w-full mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-brand rounded-xl hover:bg-brand-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:shadow-brand/25"
           >
             {submitting ? (
               <>
@@ -755,7 +755,7 @@ function inputClass(hasError: boolean) {
   return `w-full px-3 py-2.5 border rounded-xl text-sm outline-none transition-colors focus:ring-2 ${
     hasError
       ? "border-red-300 focus:border-red-500 focus:ring-red-200"
-      : "border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
+      : "border-gray-300 focus:border-brand focus:ring-brand"
   }`;
 }
 

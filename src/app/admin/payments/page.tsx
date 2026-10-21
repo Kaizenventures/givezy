@@ -85,7 +85,7 @@ export default async function PaymentsPage() {
       </p>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Stat label="Collected, after refunds" value={`₹${(collected / 100).toFixed(0)}`} tone="bg-emerald-50 text-emerald-700" />
+        <Stat label="Collected, after refunds" value={`₹${(collected / 100).toFixed(0)}`} tone="bg-brand/8 text-brand" />
         <Stat label="Live paid bookings" value={liveBookings.length} tone="bg-gray-100 text-gray-900" />
         <Stat
           label={refunded > 0 ? `Refunded (${refundedBookings.length})` : "Refunded"}
@@ -122,7 +122,7 @@ export default async function PaymentsPage() {
                     <span className="text-gray-900 font-medium">{count} ({pct}%)</span>
                   </div>
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${pct}%` }} />
+                    <div className="h-full bg-brand rounded-full" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );
@@ -160,7 +160,7 @@ export default async function PaymentsPage() {
                     <tr key={s.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3">
                         {d ? (
-                          <Link href={`/admin/donations/${d.id}`} className="text-emerald-600 hover:underline font-medium">
+                          <Link href={`/admin/donations/${d.id}`} className="text-brand hover:underline font-medium">
                             {d.donorName}
                           </Link>
                         ) : "—"}

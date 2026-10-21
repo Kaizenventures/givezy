@@ -52,7 +52,7 @@ export default function ManualPickupForm({
   }
 
   const input =
-    "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none";
+    "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand outline-none";
 
   return (
     <div className="border border-gray-200 rounded-xl">
@@ -108,7 +108,7 @@ export default function ManualPickupForm({
               Mark pickup arranged
             </button>
             {message && (
-              <p className={`text-sm ${message.kind === "ok" ? "text-emerald-600" : "text-red-500"}`}>
+              <p className={`text-sm ${message.kind === "ok" ? "text-brand" : "text-red-500"}`}>
                 {message.text}
               </p>
             )}

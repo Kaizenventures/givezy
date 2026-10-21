@@ -5,7 +5,7 @@ export const DONATION_STATUSES = [
   { value: "packed", label: "Packed (donor confirmed)", color: "bg-purple-100 text-purple-700" },
   { value: "pickup_scheduled", label: "Pickup scheduled", color: "bg-amber-100 text-amber-700" },
   { value: "picked_up", label: "Picked up", color: "bg-teal-100 text-teal-700" },
-  { value: "completed", label: "Completed", color: "bg-emerald-100 text-emerald-700" },
+  { value: "completed", label: "Completed", color: "bg-brand/10 text-brand" },
   { value: "refunded", label: "Refunded", color: "bg-rose-100 text-rose-700" },
   { value: "cancelled", label: "Cancelled", color: "bg-gray-100 text-gray-500" },
   // Legacy values from the pre-v2 flow, kept so old rows still render

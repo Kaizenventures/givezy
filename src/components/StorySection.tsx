@@ -18,7 +18,7 @@ export default function StorySection({ title, body }: { title: string; body: str
 
           {/* Narrative */}
           <AnimatedSection variants={slideInRight}>
-            <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wider mb-3">
+            <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-3">
               Your impact
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">
