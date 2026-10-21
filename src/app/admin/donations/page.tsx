@@ -85,7 +85,7 @@ export default async function DonationsListPage({
           name="q"
           defaultValue={query}
           placeholder="Search name, phone, email, pincode or reference"
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand outline-none"
         />
         {params.status && <input type="hidden" name="status" value={params.status} />}
         {params.category && <input type="hidden" name="category" value={params.category} />}
@@ -186,7 +186,7 @@ export default async function DonationsListPage({
               {filtered.map((d) => (
                 <tr key={d.id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-3">
-                    <Link href={`/admin/donations/${d.id}`} className="text-emerald-600 hover:underline font-medium">
+                    <Link href={`/admin/donations/${d.id}`} className="text-brand hover:underline font-medium">
                       {d.title || `${d.weightBucket} of ${d.category}`}
                     </Link>
                   </td>

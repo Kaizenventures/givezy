@@ -25,8 +25,8 @@ const STATS = [
     suffix: "M tonnes",
     label: "of textile waste generated in India yearly",
     source: "Ministry of Textiles",
-    color: "text-emerald-600",
-    bg: "bg-emerald-50",
+    color: "text-brand",
+    bg: "bg-brand/8",
   },
   {
     icon: Utensils,

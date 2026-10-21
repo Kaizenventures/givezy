@@ -47,12 +47,12 @@ export default async function AdminLeadsPage() {
                   <td className="py-3 font-medium text-gray-900">{r.name || "—"}</td>
                   <td className="py-3">
                     {r.email ? (
-                      <a href={`mailto:${r.email}`} className="text-emerald-600 hover:underline">{r.email}</a>
+                      <a href={`mailto:${r.email}`} className="text-brand hover:underline">{r.email}</a>
                     ) : "—"}
                   </td>
                   <td className="py-3">
                     {r.phone ? (
-                      <a href={`tel:${r.phone}`} className="text-emerald-600 hover:underline">{r.phone}</a>
+                      <a href={`tel:${r.phone}`} className="text-brand hover:underline">{r.phone}</a>
                     ) : "—"}
                   </td>
                   <td className="py-3">

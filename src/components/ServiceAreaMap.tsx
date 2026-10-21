@@ -112,7 +112,7 @@ export default function ServiceAreaMap({
           type="checkbox"
           checked={value.enabled}
           onChange={(e) => onChange({ ...value, enabled: e.target.checked })}
-          className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+          className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
         />
         <span className="text-sm text-gray-700">
           Only accept bookings inside this area
@@ -152,7 +152,7 @@ export default function ServiceAreaMap({
           step={1}
           value={value.radiusKm}
           onChange={(e) => onChange({ ...value, radiusKm: Number(e.target.value) })}
-          className="w-full accent-emerald-600"
+          className="w-full accent-brand"
         />
         <div className="flex justify-between text-xs text-gray-400 tabular-nums">
           <span>1 km</span>

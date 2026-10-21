@@ -56,6 +56,13 @@ export interface SiteContent {
   leadPopupDelaySeconds: number;
   capMessageTitle: string;
   capMessageBody: string;
+  faqs: Faq[];
+}
+
+/** One question on the homepage accordion. */
+export interface Faq {
+  q: string;
+  a: string;
 }
 
 /*
@@ -127,24 +134,26 @@ export const DEFAULT_SERVICE_AREA: ServiceArea = {
 export const DEFAULT_CAPS: Caps = { daily: 0, weekly: 0, monthly: 0 };
 
 export const DEFAULT_CONTENT: SiteContent = {
-  heroTitle: "Your clutter is someone's treasure.",
+  heroTitle: "Make Space for Better Things.",
   heroSubtitle:
-    "Books gathering dust on your shelf don't have to end up in the bin. Tell us what you have — we collect from your door and make sure they're reused or recycled.",
-  pickupLine: "We pick them up from your doorstep.",
-  impactTitle: "That textbook gathering dust on your shelf?",
+    "Declutter your home the thoughtful way. Givezy collects your pre-loved books from your doorstep and helps them find a more useful next chapter.",
+  pickupLine: "Doorstep collection included.",
+  impactTitle: "A better next chapter for every book",
   impactBody: [
     "Most books that leave a house go out with the general rubbish, mixed in with everything else, where nothing can be recovered from them.",
-    "We sort every bag we collect. Books still fit to read are directed towards reuse, and the rest towards paper recycling.",
+    "We sort every bag we collect. Books still fit to read are directed towards reuse partners where they are available. The rest go towards paper recycling wherever feasible.",
     "You get your shelf back, and they get a second life instead of a bin.",
   ].join("\n\n"),
   getStartedTitle: "Get started",
   clothesComingSoon: true,
+  // These describe the real service: the bag is posted out first, which is why
+  // there are five steps and not the three a reader might expect.
   howItWorks: [
-    "Fill in a quick form and snap a picture of your books.",
-    "Pay for the pickup.",
-    "We post you a Givezy bag.",
-    "Fill it with up to 5 kg of books.",
-    "Message us on WhatsApp and the courier collects it.",
+    "Tell us what you're giving and pay the one-time fee.",
+    "We post you a flat-packed Givezy bag.",
+    "Fill it with books and message us on WhatsApp.",
+    "A courier collects it from your door.",
+    "We sort it — reuse first, recycling for the rest.",
   ],
   nextStepTitle: "The Next Step",
   nextStepBody:
@@ -158,6 +167,42 @@ export const DEFAULT_CONTENT: SiteContent = {
   capMessageTitle: "So many books given today that we're full!",
   capMessageBody:
     "Hyderabad has been generous today and every pickup slot is taken. Leave your details and you'll go straight to the front of tomorrow's queue — no payment needed now.",
+  /*
+   * Deliberately hedged where we cannot prove otherwise. There are no named
+   * reuse partners yet, so nothing here promises a book reaches one, and
+   * nothing claims a landfill figure we cannot stand behind. Editable in
+   * Settings, so it can be tightened the day a partner is real.
+   */
+  faqs: [
+    {
+      q: "What can I give Givezy right now?",
+      a: "Books — textbooks, novels, children's books, exam prep, anything still readable. Clothes are coming soon.",
+    },
+    {
+      q: "What am I paying for?",
+      a: "A bag posted to your door, doorstep collection by courier, and the sorting and onward logistics afterwards. It is a decluttering service rather than a donation, and your receipt says so.",
+    },
+    {
+      q: "How does the pickup actually work?",
+      a: "You book and pay, we post you a flat-packed kraft bag, you fill it and message us on WhatsApp, and a courier collects it from your door. The bag usually takes a few days to reach you.",
+    },
+    {
+      q: "What happens to my books?",
+      a: "Every bag is sorted by hand. Books still fit to read are directed towards reuse partners where they are available. Books beyond reuse go towards paper recycling wherever feasible.",
+    },
+    {
+      q: "Do all the books go to orphanages?",
+      a: "No. Where a book ends up depends on its condition, whether anyone needs it, and whether a suitable partner has capacity at the time. We would rather say that plainly than promise something we cannot guarantee.",
+    },
+    {
+      q: "What if my bag is heavier than the limit?",
+      a: "The courier weighs it at collection. Stay within the limit where you can — a little over is usually fine, but a much heavier bag may need a second pickup.",
+    },
+    {
+      q: "Where do you collect from?",
+      a: "Hyderabad. If we cannot reach your area yet you will not be charged — you will be offered a place on the waiting list instead.",
+    },
+  ],
 };
 
 // A new key on purpose — pricing saved under the old weight-band keys is ignored

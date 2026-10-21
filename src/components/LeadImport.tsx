@@ -60,19 +60,19 @@ export default function LeadImport() {
             onChange={(e) => setText(e.target.value)}
             rows={6}
             placeholder={"Asha Rao <asha@example.com>\nrahul@example.com\n..."}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-y"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-brand focus:border-brand outline-none resize-y"
           />
           <div className="flex items-center gap-3 mt-3">
             <button
               onClick={run}
               disabled={busy || !text.trim()}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-brand rounded-lg hover:bg-brand-dark disabled:opacity-50"
             >
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               Import
             </button>
             {result && (
-              <p className={`text-sm ${result.kind === "ok" ? "text-emerald-600" : "text-red-500"}`}>
+              <p className={`text-sm ${result.kind === "ok" ? "text-brand" : "text-red-500"}`}>
                 {result.text}
               </p>
             )}

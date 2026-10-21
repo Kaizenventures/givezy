@@ -76,7 +76,7 @@ export default function DonationStatusUpdate({
           type="date"
           value={pickupDate}
           onChange={(e) => setPickupDate(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand outline-none"
         />
       </div>
 
@@ -87,7 +87,7 @@ export default function DonationStatusUpdate({
           onChange={(e) => setPickupNotes(e.target.value)}
           rows={2}
           placeholder="Internal notes about this donation..."
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand outline-none resize-none"
         />
       </div>
 
@@ -95,12 +95,12 @@ export default function DonationStatusUpdate({
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-5 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50"
+          className="px-5 py-2 bg-brand text-white rounded-lg text-sm font-semibold hover:bg-brand-dark transition-colors disabled:opacity-50"
         >
           {saving ? "Saving..." : "Save Changes"}
         </button>
         {message && (
-          <span className={`text-sm ${message.includes("success") ? "text-emerald-600" : "text-red-600"}`}>
+          <span className={`text-sm ${message.includes("success") ? "text-brand" : "text-red-600"}`}>
             {message}
           </span>
         )}

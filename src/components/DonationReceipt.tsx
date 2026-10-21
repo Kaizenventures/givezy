@@ -48,7 +48,7 @@ export default function DonationReceipt({ data }: { data: ReceiptData }) {
       <div className="receipt-card border border-gray-200 rounded-2xl p-6 bg-white">
         <div className="flex items-start justify-between mb-5 pb-5 border-b border-gray-100">
           <div>
-            <p className="text-lg font-bold text-emerald-700">Givezy</p>
+            <p className="text-lg font-bold text-brand">Givezy</p>
             <p className="text-xs text-gray-500 mt-0.5">Pickup confirmation</p>
           </div>
           <div className="text-right">

@@ -89,11 +89,11 @@ export default function AddressInput({
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
           placeholder={placeholder}
           rows={2}
-          className={`w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none transition-colors ${className}`}
+          className={`w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-brand focus:border-brand outline-none resize-none transition-colors ${className}`}
         />
         {loading && (
           <div className="absolute right-3 top-3">
-            <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
           </div>
         )}
       </div>
@@ -105,7 +105,7 @@ export default function AddressInput({
               <button
                 type="button"
                 onClick={() => handleSelect(s)}
-                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-emerald-50 transition-colors first:rounded-t-xl last:rounded-b-xl"
+                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-brand/8 transition-colors first:rounded-t-xl last:rounded-b-xl"
               >
                 {s.display_name}
               </button>

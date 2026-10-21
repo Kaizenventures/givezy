@@ -26,6 +26,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               { href: "/admin/waitlist", label: "Waitlist" },
               { href: "/admin/payments", label: "Payments" },
               { href: "/admin/localities", label: "Areas" },
+              { href: "/admin/analytics", label: "Visitors" },
               { href: "/admin/leads", label: "Leads" },
               { href: "/admin/settings", label: "Settings" },
             ].map((l) => (

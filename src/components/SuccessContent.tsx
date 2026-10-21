@@ -53,7 +53,7 @@ export default function SuccessContent({
       )}
 
       <div className="text-center mb-10">
-        <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 rounded-full bg-brand/10 text-brand flex items-center justify-center mx-auto mb-4">
           <CheckCircle2 className="w-8 h-8" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900">Payment received</h1>
@@ -98,7 +98,7 @@ export default function SuccessContent({
           href={`https://wa.me/${waNumber}?text=${waMessage}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all"
+          className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-brand rounded-xl hover:bg-brand-dark transition-all"
         >
           <MessageCircle className="w-4 h-4" />
           Ping us on WhatsApp when packed

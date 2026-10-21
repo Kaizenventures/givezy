@@ -51,7 +51,7 @@ export default function FulfilPickupButton({
       {disabledReason && <p className="text-xs text-gray-400 mt-1.5">{disabledReason}</p>}
 
       {message && (
-        <p className={`text-xs mt-2 ${message.kind === "ok" ? "text-emerald-600" : "text-red-500"}`}>
+        <p className={`text-xs mt-2 ${message.kind === "ok" ? "text-brand" : "text-red-500"}`}>
           {message.text}
         </p>
       )}

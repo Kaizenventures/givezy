@@ -48,7 +48,7 @@ export default async function AdminWaitlistPage() {
                 <tr key={e.id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-3 font-medium text-gray-900">{e.name}</td>
                   <td className="py-3">
-                    <a href={`tel:${e.phone}`} className="text-emerald-600 hover:underline">{e.phone}</a>
+                    <a href={`tel:${e.phone}`} className="text-brand hover:underline">{e.phone}</a>
                   </td>
                   <td className="py-3 text-gray-600">{e.email || "—"}</td>
                   <td className="py-3 text-gray-600">{e.pincode || "—"}</td>

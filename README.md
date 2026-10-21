@@ -107,5 +107,16 @@ also why `drizzle.config.ts` exports a plain object instead of calling
 `defineConfig()` — importing drizzle-kit there makes the config unresolvable at
 runtime.
 
+**Analytics are rolled up, not logged.** `page_stats`, `day_stats` and
+`referrer_stats` hold one row per day (per page / per source); there is no event
+table, because this droplet has a 10 GB disk and has twice filled it. Visitors
+are deduplicated by a one-way hash of IP + user agent + day + `NEXTAUTH_SECRET`,
+kept in `visitor_days` and pruned once the day rolls over, so no address is
+stored and nobody can be followed between days. The browser reports views to
+`/api/track` rather than the server counting them during render — pages never
+wait on a write, and crawlers filter themselves out by not running JavaScript.
+Per-page visitor counts cannot be summed into a site total; that is what
+`day_stats` is for. `npx tsx scripts/test-analytics.ts` covers it.
+
 **Editing `.env` on the droplet does nothing until the container is recreated.**
 `docker compose restart` is not enough; see DEPLOY.md.

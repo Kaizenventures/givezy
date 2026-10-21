@@ -23,7 +23,7 @@ export default function WorkCard({
         <div className="flex items-center gap-2 flex-wrap">
           <Link
             href={`/admin/donations/${d.id}`}
-            className="font-semibold text-gray-900 hover:text-emerald-600 hover:underline"
+            className="font-semibold text-gray-900 hover:text-brand hover:underline"
           >
             {d.donorName}
           </Link>
@@ -53,7 +53,7 @@ export default function WorkCard({
             target="_blank"
             rel="noopener noreferrer"
             title="Message on WhatsApp"
-            className="p-2 rounded-lg border border-gray-300 text-emerald-600 hover:bg-emerald-50"
+            className="p-2 rounded-lg border border-gray-300 text-brand hover:bg-brand/8"
           >
             <MessageCircle className="w-4 h-4" />
           </a>

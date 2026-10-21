@@ -33,7 +33,7 @@ export default function ServiceAreaTester() {
   }
 
   const view = {
-    ok: { icon: Check, tone: "text-emerald-600", text: "Inside the area — this booking would go through." },
+    ok: { icon: Check, tone: "text-brand", text: "Inside the area — this booking would go through." },
     outside: { icon: X, tone: "text-red-600", text: "Outside the area — they'd be offered the waiting list." },
     unknown: { icon: HelpCircle, tone: "text-amber-600", text: "Pincode not found — they'd be offered the waiting list." },
     unverified: { icon: HelpCircle, tone: "text-amber-600", text: "Lookup unavailable — bookings are let through while that's the case." },
@@ -57,7 +57,7 @@ export default function ServiceAreaTester() {
             maxLength={6}
             onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
             placeholder="500032"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand outline-none"
           />
         </div>
         <button

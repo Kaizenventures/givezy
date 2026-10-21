@@ -54,6 +54,13 @@ export default function AdminSettingsForm({
     setBags((prev) => prev.map((b, idx) => (idx === i ? { ...b, ...patch } : b)));
   }
 
+  function updateFaq(index: number, patch: Partial<{ q: string; a: string }>) {
+    setContent((prev) => ({
+      ...prev,
+      faqs: (prev.faqs ?? []).map((f, i) => (i === index ? { ...f, ...patch } : f)),
+    }));
+  }
+
   function updatePacked(i: number, axis: 0 | 1 | 2, value: number) {
     setBags((prev) =>
       prev.map((b, idx) => {
@@ -85,7 +92,7 @@ export default function AdminSettingsForm({
         <button
           onClick={save}
           disabled={saving}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-brand rounded-lg hover:bg-brand-dark disabled:opacity-50"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Save changes
@@ -96,7 +103,7 @@ export default function AdminSettingsForm({
         <div
           className={`mb-5 p-3 rounded-lg text-sm ${
             message.kind === "ok"
-              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+              ? "bg-brand/8 text-brand border border-brand/25"
               : "bg-red-50 text-red-700 border border-red-200"
           }`}
         >
@@ -206,7 +213,7 @@ export default function AdminSettingsForm({
                 },
               ])
             }
-            className="inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium hover:underline"
+            className="inline-flex items-center gap-1.5 text-sm text-brand font-medium hover:underline"
           >
             <Plus className="w-4 h-4" />
             Add a bag size
@@ -252,7 +259,7 @@ export default function AdminSettingsForm({
             </div>
             <button
               onClick={() => setGenres((prev) => [...prev, { id: `genre-${prev.length + 1}`, label: "New category" }])}
-              className="inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium hover:underline mt-3"
+              className="inline-flex items-center gap-1.5 text-sm text-brand font-medium hover:underline mt-3"
             >
               <Plus className="w-4 h-4" />
               Add category
@@ -357,7 +364,7 @@ export default function AdminSettingsForm({
               type="checkbox"
               checked={content.clothesComingSoon}
               onChange={(e) => setContent({ ...content, clothesComingSoon: e.target.checked })}
-              className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+              className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
             />
             <span className="text-sm text-gray-700">
               Clothes are &ldquo;launching soon&rdquo; (uncheck to start accepting clothes)
@@ -394,6 +401,65 @@ export default function AdminSettingsForm({
               className={inp}
             />
           </Labeled>
+
+          <hr className="border-gray-200" />
+
+          <div>
+            <h3 className="font-semibold text-gray-900">Questions on the homepage</h3>
+            <p className="text-sm text-gray-500 mt-1 mb-4">
+              The accordion near the bottom of the homepage. Keep the answers honest — if we
+              can&apos;t prove something, say what we actually do instead of what we hope for.
+              Clearing both boxes removes a question when you save.
+            </p>
+
+            <div className="space-y-3">
+              {(content.faqs ?? []).map((faq, i) => (
+                <div key={i} className="border border-gray-200 rounded-xl p-4 space-y-3">
+                  <Labeled label={`Question ${i + 1}`}>
+                    <input
+                      value={faq.q}
+                      onChange={(e) => updateFaq(i, { q: e.target.value })}
+                      className={inp}
+                    />
+                  </Labeled>
+                  <Labeled label="Answer">
+                    <textarea
+                      rows={3}
+                      value={faq.a}
+                      onChange={(e) => updateFaq(i, { a: e.target.value })}
+                      className={`${inp} resize-y`}
+                    />
+                  </Labeled>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setContent({
+                          ...content,
+                          faqs: (content.faqs ?? []).filter((_, idx) => idx !== i),
+                        })
+                      }
+                      className="inline-flex items-center gap-1.5 text-xs text-red-500 hover:bg-red-50 rounded-lg px-2 py-1"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Remove question
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setContent({ ...content, faqs: [...(content.faqs ?? []), { q: "", a: "" }] })
+              }
+              className="mt-3 inline-flex items-center gap-1.5 text-sm text-brand font-medium hover:underline"
+            >
+              <Plus className="w-4 h-4" />
+              Add a question
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -401,7 +467,7 @@ export default function AdminSettingsForm({
 }
 
 const inp =
-  "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none";
+  "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand outline-none";
 
 function Labeled({
   label,
@@ -518,7 +584,7 @@ function PriceCheck() {
                         </>
                       )}
                     </td>
-                    <td className={`py-2.5 font-medium tabular-nums ${diff === null ? "text-gray-400" : diff < 0 ? "text-red-600" : "text-emerald-600"}`}>
+                    <td className={`py-2.5 font-medium tabular-nums ${diff === null ? "text-gray-400" : diff < 0 ? "text-red-600" : "text-brand"}`}>
                       {diff === null ? "—" : diff < 0 ? `−${rupees(-diff)} loss` : rupees(diff)}
                     </td>
                   </tr>

@@ -105,7 +105,7 @@ function ClusterTable({
                 <td className="py-2.5">
                   <Link
                     href={`/admin/donations?${linkKey}=${encodeURIComponent(c.key)}`}
-                    className="text-emerald-600 hover:underline font-medium"
+                    className="text-brand hover:underline font-medium"
                   >
                     {c.label}
                   </Link>
@@ -115,7 +115,7 @@ function ClusterTable({
                 <td className="py-2.5">
                   <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-emerald-500 rounded-full"
+                      className="h-full bg-brand rounded-full"
                       style={{ width: `${Math.round((c.total / max) * 100)}%` }}
                     />
                   </div>

@@ -36,7 +36,7 @@ export default async function AdminDashboard() {
 
       {todoCount === 0 && work.awaitingDonor.length === 0 && work.inTransit.length === 0 && (
         <div className="border border-gray-200 rounded-xl p-8 text-center">
-          <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+          <CheckCircle2 className="w-8 h-8 text-brand mx-auto mb-2" />
           <p className="font-semibold text-gray-900">All clear</p>
           <p className="text-sm text-gray-500 mt-1">
             No bags to post, no pickups to book and nobody to chase.
@@ -143,7 +143,7 @@ export default async function AdminDashboard() {
       <div className="border border-gray-200 rounded-xl p-5 mt-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold text-gray-900">Today&apos;s slots</h2>
-          <Link href="/admin/settings" className="text-sm text-emerald-600 hover:underline">
+          <Link href="/admin/settings" className="text-sm text-brand hover:underline">
             Change limits
           </Link>
         </div>
@@ -154,7 +154,7 @@ export default async function AdminDashboard() {
 }
 
 const TONES = {
-  emerald: "bg-emerald-50 text-emerald-700",
+  emerald: "bg-brand/8 text-brand",
   amber: "bg-amber-50 text-amber-700",
   rose: "bg-rose-50 text-rose-700",
   gray: "bg-gray-100 text-gray-600",
@@ -205,7 +205,7 @@ function Section({
       {collapsed && items.length > 3 && (
         <p className="text-xs text-gray-400 mt-2">
           + {items.length - 3} more —{" "}
-          <Link href="/admin/donations" className="text-emerald-600 hover:underline">
+          <Link href="/admin/donations" className="text-brand hover:underline">
             see all pickups
           </Link>
         </p>
@@ -214,7 +214,7 @@ function Section({
       {more && (
         <p className="text-xs text-gray-400 mt-2">
           Showing 5 of {more.count} —{" "}
-          <Link href={more.href} className="text-emerald-600 hover:underline">
+          <Link href={more.href} className="text-brand hover:underline">
             see the full follow-up list
           </Link>
         </p>
@@ -258,7 +258,7 @@ function CapacityBars({
               </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full ${pct >= 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500"}`}
+                  className={`h-full rounded-full ${pct >= 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-brand"}`}
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -266,14 +266,14 @@ function CapacityBars({
           );
         })}
       </div>
-      <p className={`text-sm mt-4 ${capacity.available ? "text-emerald-600" : "text-red-600 font-medium"}`}>
+      <p className={`text-sm mt-4 ${capacity.available ? "text-brand" : "text-red-600 font-medium"}`}>
         {capacity.available
           ? `Accepting bookings — ${capacity.remaining} slot(s) left.`
           : `Full. New donors are going onto the waiting list instead of paying.`}
       </p>
       {waitingList > 0 && (
         <p className="text-sm text-gray-500 mt-1">
-          <Link href="/admin/waitlist" className="text-emerald-600 hover:underline">
+          <Link href="/admin/waitlist" className="text-brand hover:underline">
             {waitingList} on the waiting list
           </Link>{" "}
           — invite them when slots free up.

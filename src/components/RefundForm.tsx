@@ -151,7 +151,7 @@ export default function RefundForm({
                 Refund…
               </button>
               {message && (
-                <p className={`text-sm ${message.kind === "ok" ? "text-emerald-600" : "text-red-500"}`}>
+                <p className={`text-sm ${message.kind === "ok" ? "text-brand" : "text-red-500"}`}>
                   {message.text}
                 </p>
               )}

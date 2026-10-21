@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, primaryKey } from "drizzle-orm/sqlite-core";
 
 export const donations = sqliteTable("donations", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -137,6 +137,71 @@ export const pincodes = sqliteTable("pincodes", {
   lookedUpAt: text("looked_up_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
 
+/*
+ * Analytics, stored as daily rollups rather than one row per hit.
+ *
+ * A raw event log would be the obvious design and the wrong one here: this
+ * droplet has a 10 GB disk and has twice filled it. One row per page per day
+ * is a few thousand rows a year, which is nothing, and it is also all the
+ * admin panel ever reads back.
+ */
+export const pageStats = sqliteTable(
+  "page_stats",
+  {
+    day: text("day").notNull(), // YYYY-MM-DD, IST
+    path: text("path").notNull(),
+    views: integer("views").notNull().default(0),
+    visitors: integer("visitors").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.day, t.path] })],
+);
+
+export const referrerStats = sqliteTable(
+  "referrer_stats",
+  {
+    day: text("day").notNull(),
+    source: text("source").notNull(), // "instagram", "google", "direct", …
+    views: integer("views").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.day, t.source] })],
+);
+
+/*
+ * Lets one person refreshing five times count as one visitor, without being
+ * able to identify them or follow them from one day to the next.
+ *
+ * The hash is one-way over IP + user agent + the day + a server secret. No IP
+ * is ever written down. The salt changing daily means yesterday's hash and
+ * today's hash for the same person do not match, which is the point: these
+ * rows are deleted once the day has rolled over and nothing survives that
+ * could be joined back to a person.
+ */
+export const visitorDays = sqliteTable(
+  "visitor_days",
+  {
+    day: text("day").notNull(),
+    hash: text("hash").notNull(),
+    // Per page, not just per day. Deduplicating only by day meant a person's
+    // second page of the visit recorded zero visitors, so every step of the
+    // funnel below the entry page read zero — which looks like a catastrophe
+    // rather than a counting mistake.
+    path: text("path").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.day, t.hash, t.path] })],
+);
+
+/*
+ * Site-wide totals per day. Per-page visitor counts cannot simply be summed —
+ * one person reading three pages is one visitor, not three — so the honest
+ * daily figure is counted once, when a hash is first seen that day, and kept
+ * here. It also survives the nightly pruning of the hashes themselves.
+ */
+export const dayStats = sqliteTable("day_stats", {
+  day: text("day").primaryKey(),
+  views: integer("views").notNull().default(0),
+  visitors: integer("visitors").notNull().default(0),
+});
+
 export type Donation = typeof donations.$inferSelect;
 export type NewDonation = typeof donations.$inferInsert;
 export type Admin = typeof admins.$inferSelect;
@@ -146,3 +211,6 @@ export type Setting = typeof settings.$inferSelect;
 export type Lead = typeof leads.$inferSelect;
 export type WaitlistEntry = typeof waitlist.$inferSelect;
 export type PincodeRow = typeof pincodes.$inferSelect;
+export type PageStat = typeof pageStats.$inferSelect;
+export type ReferrerStat = typeof referrerStats.$inferSelect;
+export type DayStat = typeof dayStats.$inferSelect;

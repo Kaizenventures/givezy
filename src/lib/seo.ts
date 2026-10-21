@@ -3,12 +3,12 @@ import type { Metadata } from "next";
 const SITE_NAME = "Givezy";
 const SITE_URL = "https://givezy.in";
 const SITE_DESCRIPTION =
-  "Pass on books and clothes in Hyderabad with doorstep pickup. Give your pre-loved items a second life — we collect from your home.";
+  "Declutter your pre-loved books with Givezy. Doorstep pickup in Hyderabad, sorting by hand, reuse first and responsible recycling for what is beyond reading.";
 
 export function buildMetadata(overrides: Partial<Metadata> = {}): Metadata {
   const title = overrides.title
     ? `${overrides.title} | ${SITE_NAME}`
-    : `${SITE_NAME} — Give Books & Clothes in Hyderabad | Doorstep Pickup`;
+    : `${SITE_NAME} — Doorstep Book Decluttering in Hyderabad`;
 
   const description =
     (overrides.description as string) || SITE_DESCRIPTION;
