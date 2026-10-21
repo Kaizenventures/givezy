@@ -42,14 +42,11 @@ You get your shelf back, and they get a second life instead of a bin.'
 WHERE `key` = 'content'
   AND json_valid(`value`)
   AND json_extract(`value`, '$.heroTitle') = 'Your clutter is someone''s treasure.';
---> statement-breakpoint
--- The price the homepage now quotes. Agreed at Rs 499: the courier alone is
--- about Rs 231 and the posted bag another Rs 120-150, so Rs 299 was below cost.
--- Narrow on purpose — only the single-bag setup still sitting at Rs 299.
-UPDATE `settings`
-SET `value` = json_set(`value`, '$[0].pricePaise', 49900),
-    `updated_at` = CURRENT_TIMESTAMP
-WHERE `key` = 'pricing.bags'
-  AND json_valid(`value`)
-  AND json_array_length(`value`) = 1
-  AND json_extract(`value`, '$[0].pricePaise') = 29900;
+
+-- NOTE: this migration deliberately does NOT touch the price.
+--
+-- An earlier draft moved it from Rs 299 to Rs 499. It doesn't, because the
+-- price is the team's to set in the Settings tab and the homepage reads
+-- whatever is there — nothing in the code needs it changed to work. Raising it
+-- is a business decision made in the admin panel, not something a deploy does
+-- behind their back.

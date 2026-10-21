@@ -15,7 +15,7 @@ export default function NextChapter({ title, body }: { title: string; body: stri
     <section id="what-happens" className="px-4 py-20 bg-white">
       <div className="max-w-5xl mx-auto">
         <div className="max-w-2xl mb-12">
-          <p className="text-sm font-semibold text-emerald-700 uppercase tracking-wider mb-2">
+          <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-2">
             What happens next
           </p>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 text-balance">{title}</h2>
@@ -27,11 +27,11 @@ export default function NextChapter({ title, body }: { title: string; body: stri
         </div>
 
         <div className="grid md:grid-cols-2 gap-5">
-          <article className="rounded-2xl border-2 border-emerald-100 bg-emerald-50/40 p-7">
-            <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-emerald-100 mb-4">
-              <Sparkles className="w-5 h-5 text-emerald-700" aria-hidden="true" />
+          <article className="rounded-2xl border-2 border-brand/15 bg-brand/5 p-7">
+            <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-brand/10 mb-4">
+              <Sparkles className="w-5 h-5 text-brand" aria-hidden="true" />
             </div>
-            <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-brand uppercase tracking-wider">
               First choice
             </p>
             <h3 className="mt-1 text-xl font-bold text-gray-900">Still fit to read</h3>

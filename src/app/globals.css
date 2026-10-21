@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+/*
+ * Brand colours sampled from the logo artwork rather than eyeballed, so the
+ * site and the wordmark are the same green. The emerald Tailwind shades the
+ * site used before are a visibly brighter, bluer green than #1C4332.
+ */
+@theme {
+  --color-brand: #1c4332;
+  --color-brand-dark: #13301f;
+  --color-brand-light: #2d6a4a;
+  --color-coral: #f88464;
+  --color-cream: #faf8f3;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -20,13 +33,13 @@ html {
 
 /* Focus ring for accessibility */
 :focus-visible {
-  outline: 2px solid #059669;
+  outline: 2px solid #1c4332;
   outline-offset: 2px;
   border-radius: 4px;
 }
 
 /* Custom selection color */
 ::selection {
-  background-color: #d1fae5;
-  color: #065f46;
+  background-color: #d7e8de;
+  color: #13301f;
 }

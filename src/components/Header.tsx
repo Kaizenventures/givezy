@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 
@@ -31,8 +32,15 @@ export default function Header() {
       }`}
     >
       <nav className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-emerald-600">Givezy</span>
+        <Link href="/" className="flex items-center" aria-label="Givezy — home">
+          <Image
+            src="/logo-wordmark.png"
+            alt="Givezy"
+            width={449}
+            height={160}
+            priority
+            className="h-8 w-auto"
+          />
         </Link>
 
         {/* Desktop nav */}
@@ -41,14 +49,14 @@ export default function Header() {
             <Link
               key={item.href}
               href={item.href}
-              className="relative text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-emerald-600 after:transition-all hover:after:w-full"
+              className="relative text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-brand after:transition-all hover:after:w-full"
             >
               {item.label}
             </Link>
           ))}
           <Link
             href="/donate"
-            className="bg-emerald-700 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-800 transition-colors"
+            className="bg-brand text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-brand-dark transition-colors"
           >
             Book a Pickup
           </Link>
@@ -72,7 +80,7 @@ export default function Header() {
               key={item.href}
               href={item.href}
               onClick={() => setMenuOpen(false)}
-              className="block text-gray-700 font-medium py-2.5 hover:text-emerald-700 transition-colors"
+              className="block text-gray-700 font-medium py-2.5 hover:text-brand transition-colors"
             >
               {item.label}
             </Link>
@@ -80,7 +88,7 @@ export default function Header() {
           <Link
             href="/donate"
             onClick={() => setMenuOpen(false)}
-            className="!mt-3 block bg-emerald-700 text-white text-center px-5 py-2.5 rounded-lg font-semibold hover:bg-emerald-800 transition-colors"
+            className="!mt-3 block bg-brand text-white text-center px-5 py-2.5 rounded-lg font-semibold hover:bg-brand-dark transition-colors"
           >
             Book a Pickup
           </Link>

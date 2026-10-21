@@ -9,7 +9,7 @@ export default function Faqs({ faqs }: { faqs: Faq[] }) {
   if (!faqs || faqs.length === 0) return null;
 
   return (
-    <section id="faq" className="px-4 py-20 bg-[#FAF8F3]">
+    <section id="faq" className="px-4 py-20 bg-cream">
       <div className="max-w-3xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-10 text-balance">
           Questions people ask
