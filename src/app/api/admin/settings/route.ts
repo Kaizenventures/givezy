@@ -122,6 +122,18 @@ function sanitizeContent(input: unknown): SiteContent {
       : DEFAULT_CONTENT.leadPopupDelaySeconds,
     capMessageTitle: text(c.capMessageTitle, DEFAULT_CONTENT.capMessageTitle, 160),
     capMessageBody: text(c.capMessageBody, DEFAULT_CONTENT.capMessageBody, 600),
+    // Entries with a blank question are dropped rather than rendered as an
+    // empty accordion row — the editor leaves one behind every time a question
+    // is removed by clearing it.
+    faqs: Array.isArray(c.faqs)
+      ? c.faqs
+          .map((f) => ({
+            q: String((f as { q?: unknown })?.q ?? "").trim().slice(0, 200),
+            a: String((f as { a?: unknown })?.a ?? "").trim().slice(0, 1200),
+          }))
+          .filter((f) => f.q && f.a)
+          .slice(0, 20)
+      : DEFAULT_CONTENT.faqs,
   };
 }
 

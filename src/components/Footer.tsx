@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { Heart, Instagram } from "lucide-react";
+
+/*
+ * The exact link the team supplied. It points at a post rather than the
+ * profile, because the profile handle has not been confirmed and guessing one
+ * risks linking to somebody else's account. Replace it with the profile URL
+ * once that is known.
+ */
+const INSTAGRAM_URL = "https://www.instagram.com/p/Dew6Zbaz7cU/";
 
 export default function Footer() {
   return (
@@ -12,16 +20,40 @@ export default function Footer() {
           <div>
             <h3 className="font-bold text-emerald-600 text-xl mb-3">Givezy</h3>
             <p className="text-gray-500 text-sm leading-relaxed">
-              Give books and clothes a second life in Hyderabad, with doorstep pickup.
-              Give your pre-loved items a second life.
+              Clear your space. Give your things a second chance. Doorstep decluttering
+              across Hyderabad.
             </p>
+            <a
+              href={INSTAGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 text-sm text-gray-500 hover:text-emerald-700 transition-colors"
+            >
+              <Instagram className="w-4 h-4" aria-hidden="true" />
+              Follow us on Instagram
+            </a>
           </div>
           <div>
             <h4 className="font-semibold text-gray-800 text-sm uppercase tracking-wider mb-4">Quick Links</h4>
             <ul className="space-y-2.5 text-sm">
               <li>
                 <Link href="/donate" className="text-gray-500 hover:text-emerald-600 transition-colors">
-                  Give Books
+                  Book a pickup
+                </Link>
+              </li>
+              <li>
+                <Link href="/#how-it-works" className="text-gray-500 hover:text-emerald-600 transition-colors">
+                  How it works
+                </Link>
+              </li>
+              <li>
+                <Link href="/#pricing" className="text-gray-500 hover:text-emerald-600 transition-colors">
+                  Pricing
+                </Link>
+              </li>
+              <li>
+                <Link href="/#faq" className="text-gray-500 hover:text-emerald-600 transition-colors">
+                  FAQ
                 </Link>
               </li>
               <li>

@@ -54,6 +54,13 @@ export default function AdminSettingsForm({
     setBags((prev) => prev.map((b, idx) => (idx === i ? { ...b, ...patch } : b)));
   }
 
+  function updateFaq(index: number, patch: Partial<{ q: string; a: string }>) {
+    setContent((prev) => ({
+      ...prev,
+      faqs: (prev.faqs ?? []).map((f, i) => (i === index ? { ...f, ...patch } : f)),
+    }));
+  }
+
   function updatePacked(i: number, axis: 0 | 1 | 2, value: number) {
     setBags((prev) =>
       prev.map((b, idx) => {
@@ -394,6 +401,65 @@ export default function AdminSettingsForm({
               className={inp}
             />
           </Labeled>
+
+          <hr className="border-gray-200" />
+
+          <div>
+            <h3 className="font-semibold text-gray-900">Questions on the homepage</h3>
+            <p className="text-sm text-gray-500 mt-1 mb-4">
+              The accordion near the bottom of the homepage. Keep the answers honest — if we
+              can&apos;t prove something, say what we actually do instead of what we hope for.
+              Clearing both boxes removes a question when you save.
+            </p>
+
+            <div className="space-y-3">
+              {(content.faqs ?? []).map((faq, i) => (
+                <div key={i} className="border border-gray-200 rounded-xl p-4 space-y-3">
+                  <Labeled label={`Question ${i + 1}`}>
+                    <input
+                      value={faq.q}
+                      onChange={(e) => updateFaq(i, { q: e.target.value })}
+                      className={inp}
+                    />
+                  </Labeled>
+                  <Labeled label="Answer">
+                    <textarea
+                      rows={3}
+                      value={faq.a}
+                      onChange={(e) => updateFaq(i, { a: e.target.value })}
+                      className={`${inp} resize-y`}
+                    />
+                  </Labeled>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setContent({
+                          ...content,
+                          faqs: (content.faqs ?? []).filter((_, idx) => idx !== i),
+                        })
+                      }
+                      className="inline-flex items-center gap-1.5 text-xs text-red-500 hover:bg-red-50 rounded-lg px-2 py-1"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Remove question
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setContent({ ...content, faqs: [...(content.faqs ?? []), { q: "", a: "" }] })
+              }
+              className="mt-3 inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium hover:underline"
+            >
+              <Plus className="w-4 h-4" />
+              Add a question
+            </button>
+          </div>
         </div>
       )}
     </div>

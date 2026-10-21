@@ -2,10 +2,17 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import { ClipboardList, Scale, CreditCard, PackageOpen, Truck, CircleDot } from "lucide-react";
+import { ClipboardList, PackageOpen, MessageCircle, Truck, Sparkles, CircleDot } from "lucide-react";
 import { staggerContainer, fadeInUp } from "@/lib/animations";
 
-const STEP_ICONS = [ClipboardList, Scale, CreditCard, PackageOpen, Truck];
+/*
+ * One icon per step, in the order they actually happen: book and pay, the bag
+ * arrives, you fill it and message us, a courier collects, we sort it. Steps
+ * past the end of this list fall back to a plain dot rather than reusing an
+ * icon that describes the wrong thing — which is what happened when the copy
+ * changed underneath the old list and "we post you a bag" got a weighing scale.
+ */
+const STEP_ICONS = [ClipboardList, PackageOpen, MessageCircle, Truck, Sparkles];
 
 export default function TimelineSteps({ steps }: { steps: string[] }) {
   const ref = useRef(null);

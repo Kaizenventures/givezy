@@ -4,6 +4,14 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 
+const NAV = [
+  { href: "/#how-it-works", label: "How it works" },
+  { href: "/#what-happens", label: "What happens next" },
+  { href: "/#pricing", label: "Pricing" },
+  { href: "/#faq", label: "FAQ" },
+  { href: "/about", label: "About" },
+];
+
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -28,24 +36,27 @@ export default function Header() {
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden sm:flex items-center gap-6">
-          <Link
-            href="/about"
-            className="relative text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-emerald-600 after:transition-all hover:after:w-full"
-          >
-            About
-          </Link>
+        <div className="hidden md:flex items-center gap-6">
+          {NAV.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="relative text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-emerald-600 after:transition-all hover:after:w-full"
+            >
+              {item.label}
+            </Link>
+          ))}
           <Link
             href="/donate"
-            className="bg-emerald-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-all hover:shadow-md hover:shadow-emerald-200"
+            className="bg-emerald-700 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-800 transition-colors"
           >
-            Give Now
+            Book a Pickup
           </Link>
         </div>
 
         {/* Mobile hamburger */}
         <button
-          className="sm:hidden p-2 text-gray-600 hover:text-gray-900"
+          className="md:hidden p-2 text-gray-600 hover:text-gray-900"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
         >
@@ -55,20 +66,23 @@ export default function Header() {
 
       {/* Mobile slide-in */}
       {menuOpen && (
-        <div className="sm:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-3 shadow-lg">
-          <Link
-            href="/about"
-            onClick={() => setMenuOpen(false)}
-            className="block text-gray-700 font-medium py-2 hover:text-emerald-600 transition-colors"
-          >
-            About
-          </Link>
+        <div className="md:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-1 shadow-lg">
+          {NAV.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setMenuOpen(false)}
+              className="block text-gray-700 font-medium py-2.5 hover:text-emerald-700 transition-colors"
+            >
+              {item.label}
+            </Link>
+          ))}
           <Link
             href="/donate"
             onClick={() => setMenuOpen(false)}
-            className="block bg-emerald-600 text-white text-center px-5 py-2.5 rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
+            className="!mt-3 block bg-emerald-700 text-white text-center px-5 py-2.5 rounded-lg font-semibold hover:bg-emerald-800 transition-colors"
           >
-            Give Now
+            Book a Pickup
           </Link>
         </div>
       )}
